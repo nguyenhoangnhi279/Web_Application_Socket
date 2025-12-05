@@ -1,0 +1,805 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Remote Desktop Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" rel="stylesheet">
+
+    <style>
+        :root {
+            --sidebar-width: 250px;
+            --bg-primary: #111c28;
+            --bg-secondary: #0f1824;
+            --bg-card: #1b2736;
+            --text-light: #fff;
+            --text-secondary: #b3c0ce;
+            --border-color: #274059;
+            --table-bg: #16202d;
+            --input-bg: #0f1824;
+        }
+
+        body {
+            background-color: var(--bg-primary);
+            color: var(--text-light);
+            min-height: 100vh;
+            font-family: Arial, sans-serif;
+            overflow-x: hidden;
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        
+        /* Navbar */
+        .navbar {
+            background-color: var(--bg-secondary);
+            border-bottom: 1px solid var(--border-color);
+            position: fixed;
+            width: 100%;
+            height: 56px;
+            z-index: 1030;
+            padding-left: var(--sidebar-width);
+        }
+        .navbar .navbar-brand {
+            font-weight: 600;
+            font-size: 1.25rem;
+            color: var(--text-light);
+            margin-left: -15px;
+        }
+        .navbar .fa-bell, .navbar .fa-cog, .navbar .fa-user-circle {
+            color: var(--text-secondary);
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: var(--sidebar-width);
+            min-height: 100vh;
+            background-color: var(--bg-secondary);
+            position: fixed;
+            top: 0;
+            left: 0;
+            padding-top: 56px;
+            z-index: 1020;
+            border-right: 1px solid var(--border-color);
+        }
+
+        .sidebar .nav-link {
+            color: var(--text-secondary);
+            padding: 15px 20px;
+            transition: all 0.2s ease;
+            font-size: 1.1rem;
+            border-left: 5px solid transparent; 
+            display: flex; 
+            align-items: center;
+        }
+
+        .sidebar .nav-link i {
+            width: 20px;
+            text-align: center;
+            margin-right: 15px;
+            font-size: 1.1rem;
+            color: var(--text-secondary); 
+        }
+
+        .sidebar .nav-link.active,
+        .sidebar .nav-link:hover {
+            background-color: var(--bg-card);
+            color: var(--text-light);
+        }
+        
+        .sidebar .nav-link.active {
+            border-left-color: #007bff;
+            font-weight: 600;
+        }
+        .sidebar .nav-link.active i {
+            color: var(--text-light);
+        }
+        
+        /* Main Content */
+        .main-content {
+            margin-left: var(--sidebar-width);
+            padding: 20px;
+            padding-top: 80px; 
+            min-height: 100vh;
+        }
+
+        /* Card và Form Controls */
+        .card {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-color);
+            color: var(--text-light);
+            box-shadow: none;
+        }
+        
+        .form-control, .form-select {
+            background-color: var(--input-bg);
+            border: 1px solid var(--border-color);
+            color: var(--text-light);
+        }
+        .form-control::placeholder { color: #6c757d; }
+
+        /* Bảng Applications */
+        .table-application {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0 10px; 
+            background-color: var(--table-bg); 
+            border-radius: 8px; 
+            margin-top: 15px;
+        }
+
+        .table-application thead th {
+            background-color: var(--table-bg); 
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+            padding: 15px 20px; 
+            text-transform: uppercase;
+            font-weight: 500;
+            border-bottom: none; 
+        }
+        .table-application thead th:first-child { border-top-left-radius: 8px; }
+        .table-application thead th:last-child { border-top-right-radius: 8px; }
+
+        .table-application tbody tr {
+            background-color: var(--bg-card); 
+            color: var(--text-light); 
+            border-radius: 8px;
+            overflow: hidden;
+            transition: background-color 0.2s;
+        }
+        .table-application tbody tr:hover { background-color: #274059; }
+        .table-application tbody td {
+            border-top: none;
+            border-bottom: none;
+            padding: 15px 20px; 
+            vertical-align: middle;
+        }
+        .table-application tbody tr td:first-child {
+            border-top-left-radius: 8px;
+            border-bottom-left-radius: 8px;
+        }
+        .table-application tbody tr td:last-child {
+            border-top-right-radius: 8px;
+            border-bottom-right-radius: 8px;
+            width: 80px;
+        }
+        
+        .app-icon-box {
+            width: 35px;
+            height: 35px;
+            display: inline-flex;
+            justify-content: center;
+            align-items: center;
+            background-color: #2a3a4d; 
+            color: var(--text-light);
+            font-size: 1.1rem;
+            border-radius: 6px;
+            margin-right: 15px;
+        }
+
+        .running-badge { background-color: #2ecc71 !important; }
+        .notresp-badge { background-color: #f1c40f !important; color: #000 !important; }
+
+        .btn-kill-app {
+            color: #dc3545; 
+            background: transparent;
+            border: none;
+            font-size: 1.3rem;
+            padding: 0;
+            transition: color 0.2s;
+        }
+        
+        .pagination .page-item .page-link {
+            background-color: var(--bg-card);
+            border-color: var(--border-color);
+            color: var(--text-secondary);
+        }
+        .pagination .page-item.active .page-link {
+            background-color: #007bff; 
+            border-color: #007bff;
+            color: var(--text-light);
+        }
+        
+        .log-output-box {
+            background-color: var(--bg-secondary);
+            border: 1px solid #2a3a4d;
+            height: 300px;
+            overflow-y: auto;
+            border-radius: .5rem;
+            color: var(--text-secondary);
+        }
+        .log-output-box p {
+            margin-bottom: 0.25rem;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 0.85rem;
+        }
+        .log-output-box .text-danger { color: #dc3545 !important; }
+        .log-output-box .text-primary { color: #007bff !important; }
+        
+        .screenshot-placeholder {
+            border: 2px dashed #2a3a4d;
+            padding: 50px;
+            border-radius: 8px;
+            background-color: #16202d;
+        }
+
+        .video-container {
+            background-color: #000;
+            aspect-ratio: 16 / 9; 
+            border: 1px solid #2a3a4d;
+            border-radius: .5rem;
+        }
+        
+        .power-btn { transition: transform 0.1s; }
+        .power-btn:hover { transform: scale(1.02); }
+        .cursor-pointer { cursor: pointer; }
+    </style>
+</head>
+<body>
+
+<nav class="navbar navbar-expand-lg">
+    <div class="container-fluid">
+        <a class="navbar-brand fw-bold ms-3" href="#">Dashboard</a>
+        <div class="d-flex me-3">
+            <i class="fas fa-bell me-3 align-self-center cursor-pointer"></i>
+            <i class="fas fa-cog me-3 align-self-center cursor-pointer"></i>
+            <i class="fas fa-user-circle align-self-center cursor-pointer" style="font-size: 1.2rem;"></i>
+        </div>
+    </div>
+</nav>
+
+<div class="sidebar">
+    <div class="nav flex-column nav-pills" id="v-pills-tab" role="tablist" aria-orientation="vertical">
+        <a class="nav-link" id="v-pills-dashboard-tab" data-bs-toggle="pill" href="#v-pills-dashboard" role="tab" aria-selected="false">
+            <i class="fas fa-columns"></i> Dashboard
+        </a>
+        <a class="nav-link active" id="v-pills-apps-tab" data-bs-toggle="pill" href="#v-pills-apps" role="tab" aria-selected="true">
+            <i class="fas fa-th-large"></i> Applications
+        </a>
+        <a class="nav-link" id="v-pills-processes-tab" data-bs-toggle="pill" href="#v-pills-processes" role="tab" aria-selected="false">
+            <i class="fas fa-tasks"></i> Processes
+        </a>
+        <a class="nav-link" id="v-pills-screenshot-tab" data-bs-toggle="pill" href="#v-pills-screenshot" role="tab" aria-selected="false">
+            <i class="fas fa-camera"></i> Screenshot
+        </a>
+        <a class="nav-link" id="v-pills-keylogger-tab" data-bs-toggle="pill" href="#v-pills-keylogger" role="tab" aria-selected="false">
+            <i class="fas fa-keyboard"></i> Keylogger
+        </a>
+        <a class="nav-link" id="v-pills-webcam-tab" data-bs-toggle="pill" href="#v-pills-webcam" role="tab" aria-selected="false">
+            <i class="fas fa-video"></i> Webcam
+        </a>
+        <a class="nav-link" id="v-pills-power-tab" data-bs-toggle="pill" href="#v-pills-power" role="tab" aria-selected="false">
+            <i class="fas fa-power-off"></i> Power
+        </a>
+    </div>
+</div>
+
+<div class="main-content">
+    <div class="tab-content" id="v-pills-tabContent">
+
+        <div class="tab-pane fade" id="v-pills-dashboard" role="tabpanel" aria-labelledby="v-pills-dashboard-tab">
+            <h2 class="mb-4">Dashboard</h2>
+            <div class="card p-4">
+                <label for="server-ip-input" class="form-label text-secondary">Nhập địa chỉ IP Server:</label>
+                <div class="input-group mb-3">
+                    <span class="input-group-text bg-secondary border-secondary text-light">ws://</span>
+                    <input type="text" id="server-ip-input" class="form-control" placeholder="192.168.1.x:8080" value="localhost:8080">
+                    <button class="btn btn-primary" id="btn-connect">
+                        <i class="fas fa-plug me-2"></i> Connect
+                    </button>
+                </div>
+                <hr class="border-secondary my-4">
+                <p>Trạng thái: <span id="connection-status" class="badge bg-danger">Disconnected</span></p>
+                <p>Lần cuối cập nhật: <span id="last-update">--/--/----, --:--:--</span></p>
+            </div>
+        </div>
+
+        <div class="tab-pane fade show active" id="v-pills-apps" role="tabpanel" aria-labelledby="v-pills-apps-tab">
+            <h2 class="mb-2">Running Applications</h2>
+            <p class="text-secondary mb-4">Manage currently running applications on your remote desktop.</p>
+            
+            <div class="d-flex justify-content-between flex-wrap">
+                <div class="d-flex mb-3">
+                    <button id="btn-start-app" class="btn btn-primary me-2"><i class="fas fa-plus me-2"></i> Start New Application</button>
+                    <button id="refresh-app-list" class="btn btn-outline-secondary"><i class="fas fa-sync-alt me-2"></i> Refresh List</button>
+                </div>
+                <div class="d-flex mb-3">
+                    <div class="input-group" style="max-width: 250px;">
+                        <input type="text" id="app-search-input" class="form-control" placeholder="Search...">
+                        <span class="input-group-text bg-secondary border-secondary"><i class="fas fa-search text-white"></i></span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="table-responsive">
+                <table class="table table-application">
+                    <thead>
+                        <tr>
+                            <th>APPLICATION NAME</th>
+                            <th>PID</th>
+                            <th>STATUS</th>
+                            <th>ACTIONS</th>
+                        </tr>
+                    </thead>
+                    <tbody id="app-list">
+                        <tr><td colspan="4" class="text-center text-secondary">No data received. Click Refresh or check connection.</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <div class="tab-pane fade" id="v-pills-processes" role="tabpanel" aria-labelledby="v-pills-processes-tab">
+            <h2 class="mb-4">Process Manager</h2>
+            <p class="text-secondary">Monitor and manage running processes on the remote machine.</p>
+            <div class="card p-4">
+                <div class="d-flex justify-content-between flex-wrap mb-3">
+                    <div class="btn-group dropend me-2 mb-2">
+                        <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="fas fa-filter me-2"></i> Sort By
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-dark">
+                            <li><a class="dropdown-item" href="#" id="sort-proc-name">Name (A-Z)</a></li>
+                            <li><a class="dropdown-item" href="#" id="sort-proc-pid">PID</a></li>
+                        </ul>
+                    </div>
+                    <button id="btn-start-process" class="btn btn-primary mb-2"><i class="fas fa-plus me-2"></i> Launch New Process</button>
+                </div>
+                
+                <div class="table-responsive">
+                    <table class="table table-application">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>PID</th>
+                                <th>CPU</th>
+                                <th>Memory</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="process-list">
+                            <tr><td colspan="5" class="text-center text-secondary">No data received. Click Refresh or check connection.</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="tab-pane fade" id="v-pills-screenshot" role="tabpanel" aria-labelledby="v-pills-screenshot-tab">
+            <h2 class="mb-4">Screenshot</h2>
+            <div class="card p-4">
+                <div id="screenshot-placeholder" class="screenshot-placeholder mb-4 text-center">
+                    <i class="fas fa-camera fa-4x mb-3 text-secondary"></i>
+                    <h5 class="text-secondary">No Screenshot Captured</h5>
+                    <p class="text-secondary">Click 'Capture Screenshot' to begin viewing your remote desktop.</p>
+                </div>
+                <button id="capture-screenshot-btn" class="btn btn-primary btn-lg mb-4 col-md-5 mx-auto">
+                    <i class="fas fa-desktop me-2"></i> Capture Screenshot
+                </button>
+                <div id="latest-capture" class="p-3 mt-4" style="display: none;">
+                    <span class="text-secondary me-auto ms-2">Captured: <span id="captured-time">--:--:--</span></span>
+                    <img id="screenshot-img" src="" class="img-fluid rounded border border-secondary mt-3" alt="Latest Screenshot">
+                </div>
+            </div>
+        </div>
+        
+        <div class="tab-pane fade" id="v-pills-keylogger" role="tabpanel" aria-labelledby="v-pills-keylogger-tab">
+            <h2 class="mb-4">Keylogger</h2>
+            <div class="card p-4">
+                <div class="d-flex flex-wrap mb-4">
+                    <div class="btn-group me-3 mb-2" role="group">
+                        <button id="start-logging-btn" class="btn btn-success"><i class="fas fa-play me-2"></i> Start Logging</button>
+                        <button id="stop-logging-btn" class="btn btn-danger"><i class="fas fa-stop me-2"></i> Stop Logging</button>
+                    </div>
+                </div>
+                <div id="keylogger-log" class="p-3 rounded log-output-box">
+                    <p class="text-secondary">[Log activity will be streamed here...]</p>
+                </div>
+                <div class="d-flex justify-content-between mt-3">
+                    <p class="mb-0">Status: <span class="text-danger fw-bold" id="log-status">Logging Disabled</span></p>
+                    <p class="mb-0">Log entries: <span id="log-count">0</span></p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="tab-pane fade" id="v-pills-webcam" role="tabpanel" aria-labelledby="v-pills-webcam-tab">
+            <h2 class="mb-4">Remote Webcam</h2>
+            <div class="card p-4">
+                <div class="video-container mb-4 position-relative">
+                    <div class="d-flex flex-column justify-content-center align-items-center w-100 h-100 position-absolute" style="z-index: 1;">
+                        <i class="fas fa-video-slash fa-4x text-secondary mb-3 cursor-pointer"></i>
+                        <span class="text-secondary">Video Feed Disabled</span>
+                    </div>
+                </div>
+                <div class="d-flex flex-wrap mb-4">
+                    <button id="stream-btn" class="btn btn-primary btn-lg me-3 mb-2">
+                        <i class="fas fa-video me-2"></i> <span id="stream-text">Start Stream</span>
+                    </button>
+                    <button id="record-btn" class="btn btn-outline-danger btn-lg me-3 mb-2">
+                        <i class="fas fa-circle me-2"></i> Record Video
+                    </button>
+                </div>
+                <div id="recorded-videos">
+                    <div class="p-3 text-center text-secondary">No recorded videos yet.</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="tab-pane fade" id="v-pills-power" role="tabpanel" aria-labelledby="v-pills-power-tab">
+            <h2 class="mb-4">Critical Actions</h2>
+            <p class="text-danger fw-bold">⚠️ Cảnh báo: Các hành động này sẽ ngắt bất kỳ phiên làm việc nào trên máy từ xa.</p>
+            <div class="d-grid gap-4 col-md-6 mx-auto mt-5">
+                <button id="shutdown-btn" class="btn btn-danger btn-lg py-5 fw-bold power-btn power-action-btn" data-action="shutdown">
+                    <i class="fas fa-power-off fa-2x"></i> Shutdown
+                </button>
+                <button id="restart-btn" class="btn btn-warning btn-lg py-5 text-dark fw-bold power-btn power-action-btn" data-action="restart">
+                    <i class="fas fa-redo fa-2x"></i> Restart
+                </button>
+                <button id="logoff-btn" class="btn btn-secondary btn-lg py-5 fw-bold power-btn power-action-btn" data-action="logoff">
+                    <i class="fas fa-sign-out-alt fa-2x"></i> Log Off
+                </button>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+<script type="module">
+    document.addEventListener('DOMContentLoaded', () => {
+        // --- 1. BIẾN GLOBAL VÀ KHỞI TẠO WEBSOCKET ---
+        let ws = null
+        let reconnectTimeout = null;
+        let isStreaming = false;
+        let globalApps = [];
+        let globalProcs = [];
+        
+        const ipInput = document.getElementById('server-ip-input');
+        const connectBtn = document.getElementById('btn-connect');
+        const connectionStatus = document.getElementById('connection-status');
+        const lastUpdate = document.getElementById('last-update');
+        const appListBody = document.getElementById('app-list');
+        const processListBody = document.getElementById('process-list');
+
+        if(localStorage.getItem('saved_ip')) {
+            ipInput.value = localStorage.getItem('saved_ip');
+        }
+
+        connectBtn.addEventListener('click', () => {
+            const ip = ipInput.value.trim();
+            if(!ip) return alert("Vui lòng nhập IP!");
+            localStorage.setItem('saved_ip', ip);
+            connectWebSocket(`ws://${ip}/remote`);
+        });
+
+        function connectWebSocket(url) {
+            if (ws) ws.close();
+            connectionStatus.textContent = 'Connecting...';
+            connectionStatus.className = 'badge bg-warning text-dark';
+            
+            try {
+                ws = new WebSocket(url);
+            } catch(e) {
+                alert("IP không hợp lệ!");
+                return;
+            }
+
+            ws.onopen = () => {
+                console.log('Connected!');
+                connectionStatus.textContent = 'Connected';
+                connectionStatus.className = 'badge bg-success';
+                setInterval(() => {
+                    if (ws.readyState === WebSocket.OPEN) {
+                        // Gửi một gói tin vô hại để Server biết mình còn sống
+                        ws.send(JSON.stringify({ type: "PING" }));
+                    }
+                }, 2000);
+                sendCommand({ type: 'GET_APPS' });
+                sendCommand({ type: 'PROCESS_LIST' });
+            };
+
+            ws.onmessage = (event) => {
+                try {
+                    const data = JSON.parse(event.data);
+                    handleIncomingData(data);
+                    lastUpdate.textContent = new Date().toLocaleTimeString();
+                } catch (e) { console.error(e); }
+            };
+
+            ws.onclose = () => {
+                connectionStatus.textContent = 'Disconnected';
+                connectionStatus.className = 'badge bg-danger';
+            };
+        }
+
+        function sendCommand(payload) {
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                ws.send(JSON.stringify(payload));
+            } else {
+                console.error("Socket not connected");
+            }
+        }
+        
+        // --- 2. XỬ LÝ DỮ LIỆU ĐẾN ---
+        function handleIncomingData(data) {
+            switch (data.type) {
+                case 'PONG': console.log("Server heartbeat: OK"); break;
+                case 'APP_LIST': updateApplicationList(data.payload); break;
+                case 'PROCESS_LIST': updateProcessList(data.payload); break;
+                case 'SCREENSHOT_DATA': updateScreenshot(data.payload); break;
+                case 'KEYLOG_DATA': appendKeylog(data.payload.keyStroke); break;
+                case 'WEBCAM_VIDEO': playWebcamVideo(data.payload.base64); break;
+                case 'WEBCAM_STATUS': 
+                    console.log("Server đang quay: " + data.payload);
+                    break;
+            }
+        }
+
+        // --- 3. CÁC HÀM CẬP NHẬT GIAO DIỆN ---
+
+        // --- SỬA HÀM CẬP NHẬT APP ---
+function updateApplicationList(apps) {
+    globalApps = apps || []; // Lưu dữ liệu vào biến toàn cục
+    renderApps(globalApps);  // Gọi hàm vẽ giao diện
+}
+
+// Hàm vẽ giao diện App (Dùng chung cho cả lúc Update và lúc Search)
+function renderApps(appsToRender) {
+    let html = '';
+    if (!appsToRender || appsToRender.length === 0) {
+        html = '<tr><td colspan="4" class="text-center text-secondary">No apps found.</td></tr>';
+    } else {
+        appsToRender.forEach(app => {
+            const statusClass = app.status === 'Running' ? 'running-badge' : 'notresp-badge';
+            html += `
+                <tr>
+                    <td><span class="app-icon-box"><i class="fas fa-window-maximize"></i></span> ${app.name}</td>
+                    <td>${app.pid}</td>
+                    <td><span class="badge ${statusClass}">${app.status}</span></td>
+                    <td><button class="btn btn-kill-app" onclick="requestKill(${app.pid}, '${app.name}')"><i class="fas fa-times-circle"></i></button></td>
+                </tr>
+            `;
+        });
+    }
+    appListBody.innerHTML = html;
+}
+
+// --- SỬA HÀM CẬP NHẬT PROCESS ---
+function updateProcessList(procs) {
+    globalProcs = procs || []; // Lưu dữ liệu
+    renderProcs(globalProcs);  // Gọi hàm vẽ giao diện
+}
+
+// Hàm vẽ giao diện Process (Dùng chung cho cả lúc Update và Sort)
+function renderProcs(procsToRender) {
+    let html = '';
+    if (!procsToRender || procsToRender.length === 0) {
+        html = '<tr><td colspan="5" class="text-center text-secondary">No processes found.</td></tr>';
+    } else {
+        procsToRender.forEach(proc => {
+            html += `
+                <tr>
+                    <td><i class="fas fa-cog text-secondary me-2"></i> ${proc.name}</td>
+                    <td>${proc.pid}</td>
+                    <td>${proc.cpu || '0%'}</td>
+                    <td>${proc.mem || 'N/A'}</td>
+                    <td><button class="btn btn-kill-app btn-sm text-danger" onclick="requestKill(${proc.pid}, '${proc.name}')"><i class="fas fa-times"></i> End Task</button></td>
+                </tr>
+            `;
+        });
+    }
+    processListBody.innerHTML = html;
+}
+
+        function updateScreenshot(data) {
+            if (data && data.base64) {
+                document.getElementById('screenshot-img').src = `data:image/png;base64,${data.base64}`;
+                document.getElementById('latest-capture').style.display = 'block';
+                document.getElementById('screenshot-placeholder').style.display = 'none';
+                document.getElementById('captured-time').textContent = new Date().toLocaleTimeString();
+            }
+        }
+
+        function appendKeylog(key) {
+            const logBox = document.getElementById('keylogger-log');
+            const p = document.createElement('p');
+            p.innerHTML = `[${new Date().toLocaleTimeString()}] ${key}`;
+            logBox.prepend(p);
+        }
+// --- HÀM XỬ LÝ VIDEO VÀ HIỆN NÚT DOWNLOAD ---
+function playWebcamVideo(base64Str) {
+    const videoArea = document.getElementById('recorded-videos');
+    if (!videoArea) return;
+
+    videoArea.innerHTML = ""; // Xóa video cũ
+
+    // 1. Tạo thẻ Video
+    const videoObj = document.createElement("video");
+    const videoSrc = "data:video/mp4;base64," + base64Str; // Tạo source
+    videoObj.src = videoSrc;
+    videoObj.controls = true; // Hiện thanh tua lại để xem cho dễ
+    videoObj.autoplay = true;  
+    videoObj.muted = true;    
+    videoObj.style.width = "100%";
+    videoObj.style.borderRadius = "8px";
+    videoObj.style.border = "1px solid #444";
+    
+    videoArea.appendChild(videoObj);
+
+    // 2. LOGIC QUAN TRỌNG:
+    // Nếu đang Stream -> Tự động quay tiếp
+    // Nếu đang Record (Quay lẻ) -> Hiện nút Download
+    if (isStreaming) {
+        videoObj.controls = false; // Stream thì ẩn control đi cho giống Live
+        videoObj.onended = function() {
+            console.log(">> Request next stream chunk...");
+            sendCommand({ type: 'RECORD_WEBCAM', payload: { duration: 2 } });
+        };
+    } else {
+        // --- TẠO NÚT TẢI XUỐNG ---
+        const downloadBtn = document.createElement("a");
+        downloadBtn.href = videoSrc;
+        // Đặt tên file theo giờ hiện tại
+        downloadBtn.download = "Webcam_" + new Date().getTime() + ".mp4"; 
+        downloadBtn.className = "btn btn-success w-100 mt-2";
+        downloadBtn.innerHTML = '<i class="fas fa-download me-2"></i> Tải Video Này Về Máy';
+        
+        videoArea.appendChild(downloadBtn);
+        // --------------------------
+    }
+}
+        // --- 4. GÁN SỰ KIỆN NÚT BẤM ---
+
+        window.requestKill = function(pid, name) {
+            if(confirm(`Kill ${name} (PID: ${pid})?`)) {
+                sendCommand({ type: 'KILL_APP', payload: { pid: pid } });
+            }
+        }
+
+        document.getElementById('refresh-app-list').addEventListener('click', () => {
+            sendCommand({ type: 'GET_APPS' });
+        });
+
+        document.getElementById('btn-start-app').addEventListener('click', () => {
+            let name = prompt("Nhập tên ứng dụng hoặc đường dẫn (VD: notepad, calc):");
+            if(name) sendCommand({ type: 'START_APP', payload: { path: name } });
+        });
+
+        document.getElementById('btn-start-process').addEventListener('click', () => {
+            let name = prompt("Nhập tên Process muốn chạy (VD: cmd, explorer):");
+            if(name) sendCommand({ type: 'START_APP', payload: { path: name } });
+        });
+
+        document.getElementById('capture-screenshot-btn').addEventListener('click', () => {
+            sendCommand({ type: 'CAPTURE_SCREEN' });
+        });
+        // Tìm đoạn code cũ xử lý record-btn và XÓA đi, THAY BẰNG ĐOẠN NÀY:
+
+const streamBtn = document.getElementById('stream-btn');
+const streamText = document.getElementById('stream-text');
+
+if (streamBtn) {
+    streamBtn.addEventListener('click', () => {
+        if (!isStreaming) {
+            // --- BẮT ĐẦU STREAM ---
+            isStreaming = true;
+            
+            // Đổi giao diện nút sang màu đỏ (Stop)
+            streamBtn.className = "btn btn-danger btn-lg me-3 mb-2"; 
+            streamText.textContent = "Stop Stream";
+            
+            console.log(">> Bắt đầu Stream...");
+            // Gửi lệnh quay gói đầu tiên (2 giây)
+            sendCommand({ type: 'RECORD_WEBCAM', payload: { duration: 2 } }); 
+        } else {
+            // --- DỪNG STREAM ---
+            isStreaming = false;
+            
+            // Đổi giao diện nút về màu xanh (Start)
+            streamBtn.className = "btn btn-primary btn-lg me-3 mb-2";
+            streamText.textContent = "Start Stream";
+            
+            console.log(">> Đã dừng Stream.");
+        }
+    });
+}
+        // ... (Code xử lý stream-btn cũ giữ nguyên) ...
+
+// --- THÊM ĐOẠN XỬ LÝ NÚT RECORD BÊN DƯỚI ---
+const recordBtn = document.getElementById('record-btn');
+
+if (recordBtn) {
+    recordBtn.addEventListener('click', () => {
+        // 1. Kiểm tra xem có đang Stream không
+        if (isStreaming) {
+            alert("Vui lòng tắt chế độ 'Start Stream' trước khi quay video lẻ!");
+            return;
+        }
+
+        // 2. Hỏi người dùng muốn quay bao lâu
+        let sec = prompt("Nhập số giây muốn quay (VD: 10):", "10");
+        sec = parseInt(sec);
+
+        if (isNaN(sec) || sec <= 0 || sec > 60) {
+            return alert("Thời gian không hợp lệ (1-60s)");
+        }
+
+        // 3. Khóa nút lại để tránh bấm nhiều lần
+        recordBtn.disabled = true;
+        const originalText = recordBtn.innerHTML;
+        recordBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang quay ' + sec + 's...';
+
+        // 4. Gửi lệnh quay
+        console.log(">> Gửi lệnh quay " + sec + " giây.");
+        sendCommand({ type: 'RECORD_WEBCAM', payload: { duration: sec } });
+
+        // 5. Mở khóa nút sau khi quay xong (cộng thêm 2s trừ hao thời gian gửi)
+        setTimeout(() => {
+            recordBtn.disabled = false;
+            recordBtn.innerHTML = originalText;
+        }, (sec + 2) * 1000);
+    });
+}
+        document.getElementById('start-logging-btn').addEventListener('click', () => {
+            sendCommand({ type: 'KEYLOG_CONTROL', payload: { action: 'START' } });
+            document.getElementById('log-status').textContent = "Logging Active";
+            document.getElementById('log-status').className = "text-success fw-bold";
+        });
+        document.getElementById('stop-logging-btn').addEventListener('click', () => {
+            sendCommand({ type: 'KEYLOG_CONTROL', payload: { action: 'STOP' } });
+            document.getElementById('log-status').textContent = "Logging Paused";
+            document.getElementById('log-status').className = "text-danger fw-bold";
+        });
+
+        // Tự động gán sự kiện cho cả 3 nút (Shutdown, Restart, Logoff)
+        document.querySelectorAll('.power-action-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const action = e.currentTarget.getAttribute('data-action');
+                if(confirm(`Bạn có chắc chắn muốn ${action}?`)) {
+                    sendCommand({ type: 'SYSTEM_COMMAND', payload: { action: action } });
+                }
+            });
+        });
+        // --- TÍNH NĂNG TÌM KIẾM APP ---
+const searchInput = document.getElementById('app-search-input');
+if (searchInput) {
+    searchInput.addEventListener('input', (e) => {
+        const keyword = e.target.value.toLowerCase();
+        // Lọc từ danh sách gốc (globalApps)
+        const filtered = globalApps.filter(app => 
+            app.name.toLowerCase().includes(keyword) || 
+            app.pid.toString().includes(keyword)
+        );
+        renderApps(filtered); // Vẽ lại bảng với danh sách đã lọc
+    });
+}
+
+// --- TÍNH NĂNG SẮP XẾP PROCESS ---
+const sortNameBtn = document.getElementById('sort-proc-name');
+const sortPidBtn = document.getElementById('sort-proc-pid');
+
+if (sortNameBtn) {
+    sortNameBtn.addEventListener('click', (e) => {
+        e.preventDefault(); // Chặn load lại trang
+        // Copy mảng ra để sort không làm hỏng thứ tự gốc nếu không muốn
+        let sorted = [...globalProcs].sort((a, b) => 
+            a.name.localeCompare(b.name) // Sắp xếp A-Z
+        );
+        renderProcs(sorted);
+    });
+}
+
+if (sortPidBtn) {
+    sortPidBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        let sorted = [...globalProcs].sort((a, b) => 
+            a.pid - b.pid // Sắp xếp theo số PID tăng dần
+        );
+        renderProcs(sorted);
+    });
+}
+    });
+</script>
+
+</body>
+</html>

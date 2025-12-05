@@ -1,0 +1,3 @@
+C:/Users/Technical Support/Desktop/Đồ án/server/out/build/x64-Debug/CMakeFiles/RemoteServer.dir
+C:/Users/Technical Support/Desktop/Đồ án/server/out/build/x64-Debug/CMakeFiles/edit_cache.dir
+C:/Users/Technical Support/Desktop/Đồ án/server/out/build/x64-Debug/CMakeFiles/rebuild_cache.dir
