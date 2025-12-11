@@ -1,7 +1,6 @@
 #include "ServerNetwork.h"
 #include <wincrypt.h> 
 
-// --- HÀM MÃ HÓA BASE64 (Giữ nguyên) ---
 string base64_encode(const unsigned char* bytes, int len) {
     static const char* b64 = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
     string out;
@@ -19,7 +18,6 @@ string base64_encode(const unsigned char* bytes, int len) {
     return out;
 }
 
-// 1. KHỞI TẠO SERVER
 bool ServerNetwork::Init(int port) {
     WSADATA wsaData;
     if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0) return false;
@@ -46,7 +44,6 @@ bool ServerNetwork::Init(int port) {
     return true;
 }
 
-// 2. CHẤP NHẬN KẾT NỐI
 bool ServerNetwork::AcceptClient() {
     cout << ">> Dang cho Client ket noi..." << endl;
     ClientSocket = accept(ListenSocket, NULL, NULL);
@@ -55,7 +52,6 @@ bool ServerNetwork::AcceptClient() {
     return WebSocketHandshake(ClientSocket);
 }
 
-// 3. HANDSHAKE (Giữ nguyên)
 bool ServerNetwork::WebSocketHandshake(SOCKET client) {
     char buffer[1024];
     int received = recv(client, buffer, 1024, 0);
@@ -89,9 +85,8 @@ bool ServerNetwork::WebSocketHandshake(SOCKET client) {
     return true;
 }
 
-// 4. NHẬN TIN NHẮN
 string ServerNetwork::ReceiveMessage() {
-    unsigned char buffer[8192]; // Tăng buffer lên chút
+    unsigned char buffer[8192];
     int received = recv(ClientSocket, (char*)buffer, 8192, 0);
     if (received <= 0) return ""; 
 
@@ -107,22 +102,18 @@ string ServerNetwork::ReceiveMessage() {
     for (int i = 0; i < 4; i++) mask[i] = buffer[maskOffset + i];
 
     string output = "";
-    // Lưu ý: Đây là decode đơn giản, nếu gói tin quá lớn bị phân mảnh (fragment) thì cần xử lý thêm.
-    // Nhưng với lệnh text ngắn từ Client gửi lên thì thế này là đủ.
     for (int i = maskOffset + 4; i < received; i++) {
         output += (char)(buffer[i] ^ mask[(i - (maskOffset + 4)) % 4]);
     }
     return output;
 }
 
-// 5. GỬI TIN NHẮN (ĐÃ SỬA LỖI GỬI ẢNH LỚN)
 void ServerNetwork::SendFrame(string msg) {
     vector<unsigned char> frame;
     frame.push_back(0x81); // Text Frame
 
     unsigned long long len = msg.size();
 
-    // Xử lý độ dài Payload chuẩn WebSocket
     if (len <= 125) {
         frame.push_back((unsigned char)len);
     } else if (len <= 65535) {
@@ -130,20 +121,15 @@ void ServerNetwork::SendFrame(string msg) {
         frame.push_back((len >> 8) & 0xFF);
         frame.push_back(len & 0xFF);
     } else {
-        // Đây là phần sửa lỗi: Hỗ trợ gói tin cực lớn (64-bit length)
+        // Hỗ trợ gói tin cực lớn (64-bit length)
         frame.push_back(127);
         for (int i = 7; i >= 0; i--) {
             frame.push_back((len >> (8 * i)) & 0xFF);
         }
     }
 
-    // Copy dữ liệu
     frame.insert(frame.end(), msg.begin(), msg.end());
-
-    // --- SỬA LỖI NGẮT KẾT NỐI: GỬI VÒNG LẶP ---
-    // Vì gói tin ảnh rất lớn (vài MB), hàm send() có thể không gửi hết 1 lần
-    // Ta phải gửi từ từ cho đến khi hết sạch dữ liệu.
-    
+   
     const char* dataPtr = (const char*)frame.data();
     size_t totalSent = 0;
     size_t dataLeft = frame.size();

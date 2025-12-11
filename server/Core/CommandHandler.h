@@ -2,13 +2,12 @@
 
 #include <string>
 #include <iostream>
-#include "../Network/ServerNetwork.h" // Để hiểu kiểu dữ liệu ServerNetwork&
-#include "../ThirdParty/json.hpp"     // Thư viện JSON
+#include "../Network/ServerNetwork.h" 
+#include "../ThirdParty/json.hpp"    
 
 using namespace std;
 
 class CommandHandler {
 public:
-    // Input: Chuỗi JSON nhận từ Web, và Biến Server để gửi phản hồi lại
     static void Process(string jsonMessage, ServerNetwork& server);
 };

@@ -15,7 +15,6 @@
 using namespace std;
 using namespace Gdiplus;
 
-// --- CLASS QUẢN LÝ GDI+ (Tự động Bật khi chạy, Tắt khi đóng Server) ---
 struct GdiPlusManager {
     ULONG_PTR gdiplusToken;
     GdiPlusManager() {
@@ -51,8 +50,6 @@ public:
     }
 
  static string TakeScreenshot() {
-    // Try to make process DPI-aware (safe to call many times)
-    // Requires linking Shcore.lib
     SetProcessDpiAwareness(PROCESS_PER_MONITOR_DPI_AWARE);
 
     static GdiPlusManager gdiManager;
@@ -60,7 +57,6 @@ public:
     HDC hdcScreen = GetDC(NULL);
     if (!hdcScreen) return "";
 
-    // Virtual desktop logical coords (supports multi-monitor with negative offsets)
     int vLeft   = GetSystemMetrics(SM_XVIRTUALSCREEN);
     int vTop    = GetSystemMetrics(SM_YVIRTUALSCREEN);
     int vWidth  = GetSystemMetrics(SM_CXVIRTUALSCREEN);
@@ -71,16 +67,12 @@ public:
         return "";
     }
 
-    // Physical desktop pixels (real framebuffer size)
     int physW = GetDeviceCaps(hdcScreen, DESKTOPHORZRES);
     int physH = GetDeviceCaps(hdcScreen, DESKTOPVERTRES);
 
-    // Compute scaling between logical virtual size and physical size
-    // (handles mixed-DPI setups)
     double scaleX = (vWidth > 0) ? (double)physW / (double)vWidth : 1.0;
     double scaleY = (vHeight > 0) ? (double)physH / (double)vHeight : 1.0;
 
-    // Use per-axis scales for safety (non-square pixels extremely unlikely)
     int width  = (int)round(vWidth * scaleX);
     int height = (int)round(vHeight * scaleY);
     if (width <= 0 || height <= 0) {
@@ -88,11 +80,10 @@ public:
         return "";
     }
 
-    // Create a top-down DIB section (32bpp)
     BITMAPINFO bmi = {};
     bmi.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
     bmi.bmiHeader.biWidth = width;
-    bmi.bmiHeader.biHeight = -height; // top-down
+    bmi.bmiHeader.biHeight = -height; 
     bmi.bmiHeader.biPlanes = 1;
     bmi.bmiHeader.biBitCount = 32;
     bmi.bmiHeader.biCompression = BI_RGB;
@@ -113,12 +104,9 @@ public:
 
     HGDIOBJ oldBmp = SelectObject(hdcMem, hBitmap);
 
-    // Use high-quality stretch
     int oldMode = SetStretchBltMode(hdcMem, HALFTONE);
-    // Fix for HALFTONE alignment
     SetBrushOrgEx(hdcMem, 0, 0, NULL);
 
-    // Stretch from logical virtual desktop -> physical bitmap
     BOOL ok = StretchBlt(
         hdcMem,
         0, 0, width, height,
@@ -127,17 +115,14 @@ public:
         SRCCOPY
     );
 
-    // Fallback: if StretchBlt fails, do safe BitBlt for the intersection area
     if (!ok) {
         int copyW = min(width, vWidth);
         int copyH = min(height, vHeight);
         BitBlt(hdcMem, 0, 0, copyW, copyH, hdcScreen, vLeft, vTop, SRCCOPY);
     }
 
-    // Convert to GDI+ Bitmap (wrap existing pixels)
     Bitmap bmp(width, height, width * 4, PixelFormat32bppARGB, (BYTE*)pBits);
 
-    // Save to IStream (JPEG)
     IStream* pStream = NULL;
     if (CreateStreamOnHGlobal(NULL, TRUE, &pStream) != S_OK) {
         SelectObject(hdcMem, oldBmp);
@@ -169,7 +154,6 @@ public:
 
     bmp.Save(pStream, &clsid, &params);
 
-    // Read stream into buffer
     LARGE_INTEGER liZero = {};
     ULARGE_INTEGER ulSize = {};
     pStream->Seek(liZero, STREAM_SEEK_END, &ulSize);
@@ -179,7 +163,6 @@ public:
     ULONG bytesRead = 0;
     pStream->Read(buffer.data(), (ULONG)buffer.size(), &bytesRead);
 
-    // cleanup
     pStream->Release();
     SelectObject(hdcMem, oldBmp);
     SetStretchBltMode(hdcMem, oldMode);

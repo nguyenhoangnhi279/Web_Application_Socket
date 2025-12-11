@@ -64,15 +64,12 @@ public:
     static json GetAllProcesses() {
         json processArray = json::array();
         HANDLE hProcessSnap;
-        PROCESSENTRY32W pe32; // Dùng PROCESSENTRY32W (Wide char) thay vì PROCESSENTRY32
-
-        // TH32CS_SNAPPROCESS vẫn dùng bình thường
+        PROCESSENTRY32W pe32; 
         hProcessSnap = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
         if (hProcessSnap == INVALID_HANDLE_VALUE) return processArray;
 
         pe32.dwSize = sizeof(PROCESSENTRY32W);
 
-        // Dùng Process32FirstW để lấy dữ liệu dạng Unicode (WCHAR)
         if (Process32FirstW(hProcessSnap, &pe32)) {
             do {
                 // Lúc này szExeFile là WCHAR, hàm Utils sẽ chịu nhận

@@ -271,6 +271,9 @@
         <a class="nav-link" id="v-pills-power-tab" data-bs-toggle="pill" href="#v-pills-power" role="tab" aria-selected="false">
             <i class="fas fa-power-off"></i> Power
         </a>
+        <a class="nav-link" id="v-pills-upload-tab" data-bs-toggle="pill" href="#v-pills-upload" role="tab" aria-selected="false">
+            <i class="fas fa-file-upload"></i> File Transfer
+        </a>
     </div>
 </div>
 
@@ -439,6 +442,42 @@
                 </button>
             </div>
         </div>
+        <div class="tab-pane fade" id="v-pills-upload" role="tabpanel" aria-labelledby="v-pills-upload-tab">
+            <h2 class="mb-4">File Transfer</h2>
+            <div class="card p-5 text-center">
+        
+                <div class="mb-4">
+                    <i class="fas fa-cloud-upload-alt fa-5x text-primary"></i>
+                </div>
+
+                <p class="text-secondary mb-4 col-md-8 mx-auto">
+                    Chọn file từ máy tính của bạn để gửi. File sẽ được lưu tự động vào thư mục 
+                    <span class="text-warning fw-bold"><i class="fas fa-folder-open"></i> Downloads</span> 
+                    của máy sever.
+                </button>
+
+                <div class="row justify-content-center">
+                    <div class="col-md-8">
+                        <div class="input-group input-group-lg mb-3">
+                            <input type="file" class="form-control" id="file-input">
+                            <button class="btn btn-success" type="button" id="btn-upload">
+                                <i class="fas fa-paper-plane me-2"></i>Send
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row justify-content-center mt-3">
+                    <div class="col-md-8">
+                        <div id="upload-status-box" class="alert alert-secondary d-none" role="alert">
+                            <i id="upload-icon" class="fas fa-spinner fa-spin me-2"></i> 
+                            <span id="upload-msg">Đang xử lý...</span>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
 
     </div>
 </div>
@@ -447,7 +486,7 @@
 
 <script type="module">
     document.addEventListener('DOMContentLoaded', () => {
-        // --- 1. BIẾN GLOBAL VÀ KHỞI TẠO WEBSOCKET ---
+        // --- KHỞI TẠO WEBSOCKET ---
         let ws = null
         let reconnectTimeout = null;
         let isStreaming = false;
@@ -490,7 +529,7 @@
                 connectionStatus.className = 'badge bg-success';
                 setInterval(() => {
                     if (ws.readyState === WebSocket.OPEN) {
-                        // Gửi một gói tin vô hại để Server biết mình còn sống
+                        // Ping every 2 seconds to keep connection alive
                         ws.send(JSON.stringify({ type: "PING" }));
                     }
                 }, 2000);
@@ -520,7 +559,7 @@
             }
         }
         
-        // --- 2. XỬ LÝ DỮ LIỆU ĐẾN ---
+        // --- XỬ LÝ DỮ LIỆU ĐẾN ---
         function handleIncomingData(data) {
             switch (data.type) {
                 case 'PONG': console.log("Server heartbeat: OK"); break;
@@ -532,64 +571,76 @@
                 case 'WEBCAM_STATUS': 
                     console.log("Server đang quay: " + data.payload);
                     break;
+                case 'UPLOAD_STATUS':
+                    const box = document.getElementById('upload-status-box');
+                    const msg = document.getElementById('upload-msg');
+                    const icon = document.getElementById('upload-icon');
+        
+                    box.classList.remove('d-none');
+                    if (data.payload.status === 'SUCCESS') {
+                        box.className = "alert alert-success";
+                        msg.innerHTML = `<b>Thành công!</b> File đã được lưu tại Downloads/${data.payload.filename}`;
+                        icon.className = "fas fa-check-circle me-2";
+                    } else {
+                        box.className = "alert alert-danger";
+                        msg.textContent = "Thất bại! Server không thể lưu file.";
+                        icon.className = "fas fa-times-circle me-2";
+                    }
+                    break;
             }
         }
 
-        // --- 3. CÁC HÀM CẬP NHẬT GIAO DIỆN ---
+        // --- CẬP NHẬT GIAO DIỆN ---
 
-        // --- SỬA HÀM CẬP NHẬT APP ---
-function updateApplicationList(apps) {
-    globalApps = apps || []; // Lưu dữ liệu vào biến toàn cục
-    renderApps(globalApps);  // Gọi hàm vẽ giao diện
-}
+        function updateApplicationList(apps) {
+            globalApps = apps || []; 
+            renderApps(globalApps);
+        }
 
-// Hàm vẽ giao diện App (Dùng chung cho cả lúc Update và lúc Search)
-function renderApps(appsToRender) {
-    let html = '';
-    if (!appsToRender || appsToRender.length === 0) {
-        html = '<tr><td colspan="4" class="text-center text-secondary">No apps found.</td></tr>';
-    } else {
-        appsToRender.forEach(app => {
-            const statusClass = app.status === 'Running' ? 'running-badge' : 'notresp-badge';
-            html += `
-                <tr>
-                    <td><span class="app-icon-box"><i class="fas fa-window-maximize"></i></span> ${app.name}</td>
-                    <td>${app.pid}</td>
-                    <td><span class="badge ${statusClass}">${app.status}</span></td>
-                    <td><button class="btn btn-kill-app" onclick="requestKill(${app.pid}, '${app.name}')"><i class="fas fa-times-circle"></i></button></td>
-                </tr>
-            `;
-        });
-    }
-    appListBody.innerHTML = html;
-}
+        function renderApps(appsToRender) {
+            let html = '';
+            if (!appsToRender || appsToRender.length === 0) {
+                html = '<tr><td colspan="4" class="text-center text-secondary">No apps found.</td></tr>';
+            } else {
+                appsToRender.forEach(app => {
+                    const statusClass = app.status === 'Running' ? 'running-badge' : 'notresp-badge';
+                    html += `
+                        <tr>
+                            <td><span class="app-icon-box"><i class="fas fa-window-maximize"></i></span> ${app.name}</td>
+                            <td>${app.pid}</td>
+                            <td><span class="badge ${statusClass}">${app.status}</span></td>
+                            <td><button class="btn btn-kill-app" onclick="requestKill(${app.pid}, '${app.name}')"><i class="fas fa-times-circle"></i></button></td>
+                        </tr>
+            `       ;
+                });
+            }
+            appListBody.innerHTML = html;
+        }
 
-// --- SỬA HÀM CẬP NHẬT PROCESS ---
-function updateProcessList(procs) {
-    globalProcs = procs || []; // Lưu dữ liệu
-    renderProcs(globalProcs);  // Gọi hàm vẽ giao diện
-}
+        function updateProcessList(procs) {
+            globalProcs = procs || []; 
+            renderProcs(globalProcs); 
+        }
 
-// Hàm vẽ giao diện Process (Dùng chung cho cả lúc Update và Sort)
-function renderProcs(procsToRender) {
-    let html = '';
-    if (!procsToRender || procsToRender.length === 0) {
-        html = '<tr><td colspan="5" class="text-center text-secondary">No processes found.</td></tr>';
-    } else {
-        procsToRender.forEach(proc => {
-            html += `
-                <tr>
-                    <td><i class="fas fa-cog text-secondary me-2"></i> ${proc.name}</td>
-                    <td>${proc.pid}</td>
-                    <td>${proc.cpu || '0%'}</td>
-                    <td>${proc.mem || 'N/A'}</td>
-                    <td><button class="btn btn-kill-app btn-sm text-danger" onclick="requestKill(${proc.pid}, '${proc.name}')"><i class="fas fa-times"></i> End Task</button></td>
-                </tr>
-            `;
-        });
-    }
-    processListBody.innerHTML = html;
-}
+        function renderProcs(procsToRender) {
+            let html = '';
+            if (!procsToRender || procsToRender.length === 0) {
+                html = '<tr><td colspan="5" class="text-center text-secondary">No processes found.</td></tr>';
+            } else {
+                procsToRender.forEach(proc => {
+                    html += `
+                        <tr>
+                            <td><i class="fas fa-cog text-secondary me-2"></i> ${proc.name}</td>
+                            <td>${proc.pid}</td>
+                            <td>${proc.cpu || '0%'}</td>
+                            <td>${proc.mem || 'N/A'}</td>
+                            <td><button class="btn btn-kill-app btn-sm text-danger" onclick="requestKill(${proc.pid}, '${proc.name}')"><i class="fas fa-times"></i> End Task</button></td>
+                        </tr>
+            `       ;
+                });
+            }
+            processListBody.innerHTML = html;
+        }
 
         function updateScreenshot(data) {
             if (data && data.base64) {
@@ -606,50 +657,40 @@ function renderProcs(procsToRender) {
             p.innerHTML = `[${new Date().toLocaleTimeString()}] ${key}`;
             logBox.prepend(p);
         }
-// --- HÀM XỬ LÝ VIDEO VÀ HIỆN NÚT DOWNLOAD ---
-function playWebcamVideo(base64Str) {
-    const videoArea = document.getElementById('recorded-videos');
-    if (!videoArea) return;
+        function playWebcamVideo(base64Str) {
+            const videoArea = document.getElementById('recorded-videos');
+            if (!videoArea) return;
 
-    videoArea.innerHTML = ""; // Xóa video cũ
+            videoArea.innerHTML = "";
 
-    // 1. Tạo thẻ Video
-    const videoObj = document.createElement("video");
-    const videoSrc = "data:video/mp4;base64," + base64Str; // Tạo source
-    videoObj.src = videoSrc;
-    videoObj.controls = true; // Hiện thanh tua lại để xem cho dễ
-    videoObj.autoplay = true;  
-    videoObj.muted = true;    
-    videoObj.style.width = "100%";
-    videoObj.style.borderRadius = "8px";
-    videoObj.style.border = "1px solid #444";
+            const videoObj = document.createElement("video");
+            const videoSrc = "data:video/mp4;base64," + base64Str;
+            videoObj.src = videoSrc;
+            videoObj.controls = true;
+            videoObj.autoplay = true;  
+            videoObj.muted = true;    
+            videoObj.style.width = "100%";
+            videoObj.style.borderRadius = "8px";
+            videoObj.style.border = "1px solid #444";
     
-    videoArea.appendChild(videoObj);
+            videoArea.appendChild(videoObj);
 
-    // 2. LOGIC QUAN TRỌNG:
-    // Nếu đang Stream -> Tự động quay tiếp
-    // Nếu đang Record (Quay lẻ) -> Hiện nút Download
-    if (isStreaming) {
-        videoObj.controls = false; // Stream thì ẩn control đi cho giống Live
-        videoObj.onended = function() {
-            console.log(">> Request next stream chunk...");
-            sendCommand({ type: 'RECORD_WEBCAM', payload: { duration: 2 } });
-        };
-    } else {
-        // --- TẠO NÚT TẢI XUỐNG ---
-        const downloadBtn = document.createElement("a");
-        downloadBtn.href = videoSrc;
-        // Đặt tên file theo giờ hiện tại
-        downloadBtn.download = "Webcam_" + new Date().getTime() + ".mp4"; 
-        downloadBtn.className = "btn btn-success w-100 mt-2";
-        downloadBtn.innerHTML = '<i class="fas fa-download me-2"></i> Tải Video Này Về Máy';
+            if (isStreaming) {
+                videoObj.controls = false;
+                videoObj.onended = function() {
+                    console.log(">> Request next stream chunk...");
+                    sendCommand({ type: 'RECORD_WEBCAM', payload: { duration: 2 } });
+                };
+            } else {
+                const downloadBtn = document.createElement("a");
+                downloadBtn.href = videoSrc;
+                downloadBtn.download = "Webcam_" + new Date().getTime() + ".mp4"; 
+                downloadBtn.className = "btn btn-success w-100 mt-2";
+                downloadBtn.innerHTML = '<i class="fas fa-download me-2"></i> Tải Video Này Về Máy';
         
-        videoArea.appendChild(downloadBtn);
-        // --------------------------
-    }
-}
-        // --- 4. GÁN SỰ KIỆN NÚT BẤM ---
-
+                videoArea.appendChild(downloadBtn);
+            }
+        }
         window.requestKill = function(pid, name) {
             if(confirm(`Kill ${name} (PID: ${pid})?`)) {
                 sendCommand({ type: 'KILL_APP', payload: { pid: pid } });
@@ -673,73 +714,59 @@ function playWebcamVideo(base64Str) {
         document.getElementById('capture-screenshot-btn').addEventListener('click', () => {
             sendCommand({ type: 'CAPTURE_SCREEN' });
         });
-        // Tìm đoạn code cũ xử lý record-btn và XÓA đi, THAY BẰNG ĐOẠN NÀY:
 
-const streamBtn = document.getElementById('stream-btn');
-const streamText = document.getElementById('stream-text');
+        const streamBtn = document.getElementById('stream-btn');
+        const streamText = document.getElementById('stream-text');
 
-if (streamBtn) {
-    streamBtn.addEventListener('click', () => {
-        if (!isStreaming) {
-            // --- BẮT ĐẦU STREAM ---
-            isStreaming = true;
+        if (streamBtn) {
+            streamBtn.addEventListener('click', () => {
+                if (!isStreaming) {
+                    isStreaming = true;
             
-            // Đổi giao diện nút sang màu đỏ (Stop)
-            streamBtn.className = "btn btn-danger btn-lg me-3 mb-2"; 
-            streamText.textContent = "Stop Stream";
+                    streamBtn.className = "btn btn-danger btn-lg me-3 mb-2"; 
+                    streamText.textContent = "Stop Stream";
             
-            console.log(">> Bắt đầu Stream...");
-            // Gửi lệnh quay gói đầu tiên (2 giây)
-            sendCommand({ type: 'RECORD_WEBCAM', payload: { duration: 2 } }); 
-        } else {
-            // --- DỪNG STREAM ---
-            isStreaming = false;
+                    console.log(">> Bắt đầu Stream...");
+                    sendCommand({ type: 'RECORD_WEBCAM', payload: { duration: 2 } }); 
+                } else {
+                    isStreaming = false;
             
-            // Đổi giao diện nút về màu xanh (Start)
-            streamBtn.className = "btn btn-primary btn-lg me-3 mb-2";
-            streamText.textContent = "Start Stream";
+                    streamBtn.className = "btn btn-primary btn-lg me-3 mb-2";
+                    streamText.textContent = "Start Stream";
             
-            console.log(">> Đã dừng Stream.");
+                    console.log(">> Đã dừng Stream.");
+                }
+            });
         }
-    });
-}
-        // ... (Code xử lý stream-btn cũ giữ nguyên) ...
+        const recordBtn = document.getElementById('record-btn');
 
-// --- THÊM ĐOẠN XỬ LÝ NÚT RECORD BÊN DƯỚI ---
-const recordBtn = document.getElementById('record-btn');
+        if (recordBtn) {
+            recordBtn.addEventListener('click', () => {
+                if (isStreaming) {
+                    alert("Vui lòng tắt chế độ 'Start Stream' trước khi quay video lẻ!");
+                    return;
+                }
 
-if (recordBtn) {
-    recordBtn.addEventListener('click', () => {
-        // 1. Kiểm tra xem có đang Stream không
-        if (isStreaming) {
-            alert("Vui lòng tắt chế độ 'Start Stream' trước khi quay video lẻ!");
-            return;
+                let sec = prompt("Nhập số giây muốn quay (VD: 10):", "10");
+                sec = parseInt(sec);
+
+                if (isNaN(sec) || sec <= 0 || sec > 60) {
+                    return alert("Thời gian không hợp lệ (1-60s)");
+                }
+
+                recordBtn.disabled = true;
+                const originalText = recordBtn.innerHTML;
+                recordBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang quay ' + sec + 's...';
+
+                console.log(">> Gửi lệnh quay " + sec + " giây.");
+                sendCommand({ type: 'RECORD_WEBCAM', payload: { duration: sec } });
+
+                setTimeout(() => {
+                    recordBtn.disabled = false;
+                    recordBtn.innerHTML = originalText;
+                }, (sec + 2) * 1000);
+            });
         }
-
-        // 2. Hỏi người dùng muốn quay bao lâu
-        let sec = prompt("Nhập số giây muốn quay (VD: 10):", "10");
-        sec = parseInt(sec);
-
-        if (isNaN(sec) || sec <= 0 || sec > 60) {
-            return alert("Thời gian không hợp lệ (1-60s)");
-        }
-
-        // 3. Khóa nút lại để tránh bấm nhiều lần
-        recordBtn.disabled = true;
-        const originalText = recordBtn.innerHTML;
-        recordBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang quay ' + sec + 's...';
-
-        // 4. Gửi lệnh quay
-        console.log(">> Gửi lệnh quay " + sec + " giây.");
-        sendCommand({ type: 'RECORD_WEBCAM', payload: { duration: sec } });
-
-        // 5. Mở khóa nút sau khi quay xong (cộng thêm 2s trừ hao thời gian gửi)
-        setTimeout(() => {
-            recordBtn.disabled = false;
-            recordBtn.innerHTML = originalText;
-        }, (sec + 2) * 1000);
-    });
-}
         document.getElementById('start-logging-btn').addEventListener('click', () => {
             sendCommand({ type: 'KEYLOG_CONTROL', payload: { action: 'START' } });
             document.getElementById('log-status').textContent = "Logging Active";
@@ -751,7 +778,6 @@ if (recordBtn) {
             document.getElementById('log-status').className = "text-danger fw-bold";
         });
 
-        // Tự động gán sự kiện cho cả 3 nút (Shutdown, Restart, Logoff)
         document.querySelectorAll('.power-action-btn').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 const action = e.currentTarget.getAttribute('data-action');
@@ -760,45 +786,91 @@ if (recordBtn) {
                 }
             });
         });
-        // --- TÍNH NĂNG TÌM KIẾM APP ---
-const searchInput = document.getElementById('app-search-input');
-if (searchInput) {
-    searchInput.addEventListener('input', (e) => {
-        const keyword = e.target.value.toLowerCase();
-        // Lọc từ danh sách gốc (globalApps)
-        const filtered = globalApps.filter(app => 
-            app.name.toLowerCase().includes(keyword) || 
-            app.pid.toString().includes(keyword)
-        );
-        renderApps(filtered); // Vẽ lại bảng với danh sách đã lọc
-    });
-}
+        const searchInput = document.getElementById('app-search-input');
+        if (searchInput) {
+            searchInput.addEventListener('input', (e) => {
+                const keyword = e.target.value.toLowerCase();
+                const filtered = globalApps.filter(app => 
+                    app.name.toLowerCase().includes(keyword) || 
+                    app.pid.toString().includes(keyword)
+                );
+                renderApps(filtered);
+            });
+        }
+        const sortNameBtn = document.getElementById('sort-proc-name');
+        const sortPidBtn = document.getElementById('sort-proc-pid');
 
-// --- TÍNH NĂNG SẮP XẾP PROCESS ---
-const sortNameBtn = document.getElementById('sort-proc-name');
-const sortPidBtn = document.getElementById('sort-proc-pid');
+        if (sortNameBtn) {
+            sortNameBtn.addEventListener('click', (e) => {
+                e.preventDefault(); 
+                let sorted = [...globalProcs].sort((a, b) => 
+                    a.name.localeCompare(b.name)
+                );
+                renderProcs(sorted);
+            });
+        }
 
-if (sortNameBtn) {
-    sortNameBtn.addEventListener('click', (e) => {
-        e.preventDefault(); // Chặn load lại trang
-        // Copy mảng ra để sort không làm hỏng thứ tự gốc nếu không muốn
-        let sorted = [...globalProcs].sort((a, b) => 
-            a.name.localeCompare(b.name) // Sắp xếp A-Z
-        );
-        renderProcs(sorted);
-    });
-}
+        if (sortPidBtn) {
+            sortPidBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                let sorted = [...globalProcs].sort((a, b) => 
+                    a.pid - b.pid
+                );
+                renderProcs(sorted);
+            });
+        }
+        const btnUpload = document.getElementById('btn-upload');
+        const fileInput = document.getElementById('file-input');
+        const statusBox = document.getElementById('upload-status-box');
+        const statusMsg = document.getElementById('upload-msg');
+        const statusIcon = document.getElementById('upload-icon');
 
-if (sortPidBtn) {
-    sortPidBtn.addEventListener('click', (e) => {
-        e.preventDefault();
-        let sorted = [...globalProcs].sort((a, b) => 
-            a.pid - b.pid // Sắp xếp theo số PID tăng dần
-        );
-        renderProcs(sorted);
-    });
-}
-    });
+        if (btnUpload) {
+            btnUpload.addEventListener('click', () => {
+                const file = fileInput.files[0];
+        
+                statusBox.classList.add('d-none');
+                statusBox.className = "alert alert-secondary d-none";
+
+                if (!file) {
+                    alert("Vui lòng chọn file cần gửi!");
+                    return;
+                }
+
+                if (file.size > 10 * 1024 * 1024) {
+                    alert("File quá lớn! Vui lòng chọn file dưới 10MB.");
+                    return;
+                }
+                statusBox.classList.remove('d-none');
+                statusBox.className = "alert alert-warning";
+                statusMsg.textContent = "Đang mã hóa và gửi dữ liệu...";
+                statusIcon.className = "fas fa-spinner fa-spin me-2";
+
+                const reader = new FileReader();
+                reader.readAsDataURL(file);
+
+                reader.onload = function() {
+                    const base64String = reader.result.split(',')[1];
+
+                    sendCommand({
+                        type: 'UPLOAD_FILE',
+                        payload: {
+                            filename: file.name,
+                            base64: base64String
+                        }
+                    });
+            
+                    statusMsg.textContent = "Đã gửi gói tin lên Server. Đang đợi phản hồi...";
+                };
+
+                reader.onerror = function() {
+                    statusBox.className = "alert alert-danger";
+                    statusMsg.textContent = "Lỗi khi đọc file!";
+                    statusIcon.className = "fas fa-exclamation-triangle me-2";
+                };
+            });
+        }
+});
 </script>
 
 </body>
