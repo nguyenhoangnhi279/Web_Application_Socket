@@ -53,8 +53,9 @@ bool ServerNetwork::AcceptClient() {
 }
 
 bool ServerNetwork::WebSocketHandshake(SOCKET client) {
-    char buffer[1024];
-    int received = recv(client, buffer, 1024, 0);
+    const int MAX_BUFFER_SIZE = 10485760;
+    char* buffer = new char[MAX_BUFFER_SIZE];
+    int received = recv(client, buffer, MAX_BUFFER_SIZE, 0);
     if (received <= 0) return false;
 
     string req(buffer, received);
@@ -82,12 +83,14 @@ bool ServerNetwork::WebSocketHandshake(SOCKET client) {
     
     send(client, response.c_str(), response.length(), 0);
     cout << ">> Handshake thanh cong!" << endl;
+    delete[] buffer;
     return true;
 }
 
 string ServerNetwork::ReceiveMessage() {
-    unsigned char buffer[8192];
-    int received = recv(ClientSocket, (char*)buffer, 8192, 0);
+    const int MAX_BUFFER_SIZE = 10485760;
+    char* buffer = new char[MAX_BUFFER_SIZE];
+    int received = recv(ClientSocket, (char*)buffer, MAX_BUFFER_SIZE, 0);
     if (received <= 0) return ""; 
 
     if ((buffer[0] & 0x0F) == 0x08) return "DISCONNECT";
@@ -105,6 +108,7 @@ string ServerNetwork::ReceiveMessage() {
     for (int i = maskOffset + 4; i < received; i++) {
         output += (char)(buffer[i] ^ mask[(i - (maskOffset + 4)) % 4]);
     }
+    delete[] buffer;
     return output;
 }
 

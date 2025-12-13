@@ -19,7 +19,7 @@ public:
         }
         string cmd = "Tools\\ffmpeg.exe -f dshow -i video=\"" + cameraName + "\" "
              "-t " + to_string(duration) + " " 
-             "-vf scale=480:360 -r 20 -b:v 300k -c:v libx264 -preset ultrafast "
+             "-vf scale=1920:1080 -r 30 -crf 23 -c:v libx264 -preset ultrafast "
              "-threads 2 "       
              "-loglevel quiet " 
              "-y webcam_out.mp4 > NUL 2>&1";

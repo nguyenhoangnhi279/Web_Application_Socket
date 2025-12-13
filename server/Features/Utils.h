@@ -32,8 +32,6 @@ public:
         while (out.size() % 4) out.push_back('=');
         return out;
     }
-    // ... (Giữ nguyên phần Base64Encode cũ ở trên) ...
-
     static string Base64Decode(string const& encoded_string) {
         static const string base64_chars = 
              "ABCDEFGHIJKLMNOPQRSTUVWXYZ"

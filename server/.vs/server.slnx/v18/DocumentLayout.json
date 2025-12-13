@@ -3,6 +3,14 @@
   "WorkspaceRootPath": "C:\\Users\\Technical Support\\Desktop\\\u0110\u1ED3 \u00E1n\\server\\",
   "Documents": [
     {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\Technical Support\\Desktop\\\u0110\u1ED3 \u00E1n\\server\\Network\\ServerNetwork.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:Network\\ServerNetwork.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\Technical Support\\Desktop\\\u0110\u1ED3 \u00E1n\\server\\Core\\CommandHandler.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:Core\\CommandHandler.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+    },
+    {
       "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\Technical Support\\Desktop\\\u0110\u1ED3 \u00E1n\\server\\CMakeLists.txt||{8B382828-6202-11D1-8870-0000F87579D2}",
       "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:CMakeLists.txt||{8B382828-6202-11D1-8870-0000F87579D2}"
     },
@@ -24,11 +32,11 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 3,
+          "SelectedChildIndex": 1,
           "Children": [
             {
               "$type": "Document",
-              "DocumentIndex": 1,
+              "DocumentIndex": 3,
               "Title": "launch.vs.json",
               "DocumentMoniker": "C:\\Users\\Technical Support\\Desktop\\\u0110\u1ED3 \u00E1n\\server\\.vs\\launch.vs.json",
               "RelativeDocumentMoniker": ".vs\\launch.vs.json",
@@ -42,7 +50,32 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 2,
+              "DocumentIndex": 0,
+              "Title": "ServerNetwork.cpp",
+              "DocumentMoniker": "C:\\Users\\Technical Support\\Desktop\\\u0110\u1ED3 \u00E1n\\server\\Network\\ServerNetwork.cpp",
+              "RelativeDocumentMoniker": "Network\\ServerNetwork.cpp",
+              "ToolTip": "C:\\Users\\Technical Support\\Desktop\\\u0110\u1ED3 \u00E1n\\server\\Network\\ServerNetwork.cpp",
+              "RelativeToolTip": "Network\\ServerNetwork.cpp",
+              "ViewState": "AgIAAEoAAAAAAAAAAAAowFQAAAAvAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
+              "WhenOpened": "2025-12-13T08:22:35.27Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "CommandHandler.cpp",
+              "DocumentMoniker": "C:\\Users\\Technical Support\\Desktop\\\u0110\u1ED3 \u00E1n\\server\\Core\\CommandHandler.cpp",
+              "RelativeDocumentMoniker": "Core\\CommandHandler.cpp",
+              "ToolTip": "C:\\Users\\Technical Support\\Desktop\\\u0110\u1ED3 \u00E1n\\server\\Core\\CommandHandler.cpp",
+              "RelativeToolTip": "Core\\CommandHandler.cpp",
+              "ViewState": "AgIAAEoAAAAAAAAAAADwv08AAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
+              "WhenOpened": "2025-12-13T06:51:49.203Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 4,
               "Title": "gdiplusbitmap.h",
               "DocumentMoniker": "C:\\Program Files (x86)\\Windows Kits\\10\\Include\\10.0.26100.0\\um\\gdiplusbitmap.h",
               "RelativeDocumentMoniker": "..\\..\\..\\..\\..\\Program Files (x86)\\Windows Kits\\10\\Include\\10.0.26100.0\\um\\gdiplusbitmap.h",
@@ -54,7 +87,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 3,
+              "DocumentIndex": 5,
               "Title": "gdiplusimaging.h",
               "DocumentMoniker": "C:\\Program Files (x86)\\Windows Kits\\10\\Include\\10.0.26100.0\\um\\gdiplusimaging.h",
               "RelativeDocumentMoniker": "..\\..\\..\\..\\..\\Program Files (x86)\\Windows Kits\\10\\Include\\10.0.26100.0\\um\\gdiplusimaging.h",
@@ -66,7 +99,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 0,
+              "DocumentIndex": 2,
               "Title": "CMakeLists.txt",
               "DocumentMoniker": "C:\\Users\\Technical Support\\Desktop\\\u0110\u1ED3 \u00E1n\\server\\CMakeLists.txt",
               "RelativeDocumentMoniker": "CMakeLists.txt",
@@ -74,8 +107,7 @@
               "RelativeToolTip": "CMakeLists.txt",
               "ViewState": "AgIAABMAAAAAAAAAAAAAABcAAAABAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003109|",
-              "WhenOpened": "2025-12-03T17:16:13.232Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-12-03T17:16:13.232Z"
             }
           ]
         }

@@ -41,12 +41,15 @@ private:
     }
 
     static string GetMemoryUsage(DWORD pid) {
-        HANDLE hProcess = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, pid);
+        HANDLE hProcess = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, FALSE, pid);
+        if (NULL == hProcess) {
+            hProcess = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, pid);
+        }
         if (NULL == hProcess) return "N/A";
         PROCESS_MEMORY_COUNTERS pmc;
         string mem = "N/A";
-        if (GetProcessMemoryInfo(hProcess, &pmc, sizeof(pmc))) {
-            char buffer[32];
+        if (GetProcessMemoryInfo(hProcess, (PROCESS_MEMORY_COUNTERS*)&pmc, sizeof(pmc))) {
+            char buffer[64];
             sprintf_s(buffer, "%.1f MB", pmc.WorkingSetSize / (1024.0 * 1024.0));
             mem = string(buffer);
         }
@@ -72,7 +75,6 @@ public:
 
         if (Process32FirstW(hProcessSnap, &pe32)) {
             do {
-                // Lúc này szExeFile là WCHAR, hàm Utils sẽ chịu nhận
                 string name = Utils::WStringToString(pe32.szExeFile);
                 int pid = pe32.th32ProcessID;
                 string ram = GetMemoryUsage(pid);

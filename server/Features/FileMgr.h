@@ -2,7 +2,7 @@
 #include <iostream>
 #include <fstream>
 #include <string>
-#include <cstdlib> // Thư viện để dùng hàm getenv
+#include <cstdlib>
 #include "Utils.h"
 
 using namespace std;
