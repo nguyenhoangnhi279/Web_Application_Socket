@@ -16,12 +16,12 @@ Hệ thống cung cấp bộ công cụ toàn diện để quản trị hệ th�
 
 | Module | Chức năng chi tiết |
 | :--- | :--- |
-| **Screenshot** | Chụp màn hình Desktop thời gian thực (Real-time monitoring). |
+| **Screenshot** | Chụp màn hình Desktop thời gian thực. |
 | **Keylogger** | Giám sát bàn phím, ghi lại phím bấm (hỗ trợ phím chức năng). |
 | **Webcam** | Quay video hoặc Stream hình ảnh từ Webcam (sử dụng FFmpeg). |
-| **Power Control** | Tắt máy (Shutdown), Khởi động lại (Restart), Đăng xuất (Logoff). |
+| **Power Control** | Tắt máy, Khởi động lại, Đăng xuất. |
 | **TaskManager** | Liệt kê, tìm kiếm ứng dụng/tiến trình. Xem RAM usage. Kill Process. |
-| **File Transfer** | Duyệt file (Remote Explorer), Upload và Download file tốc độ cao. |
+| **File Transfer** | Duyệt file, Upload và Download file tốc độ cao. |
 | **Net Monitor** | Giám sát các kết nối mạng TCP/IP đang mở trên máy. |
 
 ## Công nghệ sử dụng
@@ -74,8 +74,8 @@ Hệ thống cung cấp bộ công cụ toàn diện để quản trị hệ th�
 
 ## ⚠️ Lưu ý quan trọng
 
-* **Tường lửa (Firewall):** Nếu kết nối từ máy khác trong mạng LAN, hãy đảm bảo Windows Firewall đã **cho phép Port 8080** (Inbound Rule) hoặc tắt tạm thời Firewall.
-* **Antivirus:** Một số phần mềm diệt virus có thể nhận diện `RemoteServer.exe` là mã độc do hành vi Hook bàn phím (Keylogger). Hãy thêm vào danh sách loại trừ (Exclusion) khi chạy thử nghiệm.
+* **Tường lửa (Firewall):** Nếu kết nối từ máy khác trong mạng LAN, hãy đảm bảo Windows Firewall đã **cho phép Port 8080**  hoặc tắt tạm thời Firewall.
+* **Antivirus:** Một số phần mềm diệt virus có thể nhận diện `RemoteServer.exe` là mã độc do hành vi Keylogger. Hãy thêm vào danh sách loại trừ khi chạy thử nghiệm.
 * **Lag/Delay:** Khi truyền tải file lớn hoặc xem Webcam, độ trễ phụ thuộc vào tốc độ mạng LAN của bạn.
 
 ## Tác giả
