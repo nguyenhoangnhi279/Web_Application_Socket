@@ -1,30 +1,30 @@
-# 🖥️ Remote Desktop Control System (Web-based)
+# Remote Desktop Control System (Web-based)
 
 ![C++](https://img.shields.io/badge/Language-C++17-blue.svg) ![Frontend](https://img.shields.io/badge/Frontend-HTML5%20%2F%20JS-orange.svg) ![Protocol](https://img.shields.io/badge/Protocol-WebSocket-green.svg) ![Platform](https://img.shields.io/badge/Platform-Windows-0078D6.svg)
 
-> **ONEFIVE - Remote Control V1.0**
+> **ONEFIVE**
 >
 > Hệ thống điều khiển và giám sát máy tính từ xa thông qua giao diện Web, sử dụng giao thức WebSocket hoạt động trên mạng LAN/VPN.
 
-## 📖 Giới thiệu (Introduction)
+## Giới thiệu
 
-Dự án này là một giải pháp **Remote Desktop** theo mô hình Client-Server. Khác với TeamViewer hay UltraViewer, Client của hệ thống chạy hoàn toàn trên trình duyệt Web (Agent-less), giúp người quản trị có thể điều khiển máy tính mục tiêu từ bất kỳ thiết bị nào (PC, Mobile, Tablet) mà không cần cài đặt phần mềm.
+Dự án này là một giải pháp **Remote Desktop** theo mô hình Client-Server. Client của hệ thống chạy hoàn toàn trên trình duyệt Web, giúp người quản trị có thể điều khiển máy tính mục tiêu từ bất kỳ thiết bị nào (PC, Mobile, Tablet) mà không cần cài đặt phần mềm.
 
-## 🚀 Tính năng chính (Key Features)
+## Tính năng chính
 
 Hệ thống cung cấp bộ công cụ toàn diện để quản trị hệ thống Windows từ xa:
 
 | Module | Chức năng chi tiết |
 | :--- | :--- |
-| **📺 Screenshot** | Chụp màn hình Desktop thời gian thực (Real-time monitoring). |
-| **⌨️ Keylogger** | Giám sát bàn phím, ghi lại phím bấm (hỗ trợ phím chức năng). |
-| **📷 Webcam** | Quay video hoặc Stream hình ảnh từ Webcam (sử dụng FFmpeg). |
-| **⚡ Power Control** | Tắt máy (Shutdown), Khởi động lại (Restart), Đăng xuất (Logoff). |
+| **Screenshot** | Chụp màn hình Desktop thời gian thực (Real-time monitoring). |
+| **Keylogger** | Giám sát bàn phím, ghi lại phím bấm (hỗ trợ phím chức năng). |
+| **Webcam** | Quay video hoặc Stream hình ảnh từ Webcam (sử dụng FFmpeg). |
+| **Power Control** | Tắt máy (Shutdown), Khởi động lại (Restart), Đăng xuất (Logoff). |
 | **TaskManager** | Liệt kê, tìm kiếm ứng dụng/tiến trình. Xem RAM usage. Kill Process. |
-| **📂 File Transfer** | Duyệt file (Remote Explorer), Upload và Download file tốc độ cao. |
-| **🌐 Net Monitor** | Giám sát các kết nối mạng TCP/IP đang mở trên máy. |
+| **File Transfer** | Duyệt file (Remote Explorer), Upload và Download file tốc độ cao. |
+| **Net Monitor** | Giám sát các kết nối mạng TCP/IP đang mở trên máy. |
 
-## 🛠️ Công nghệ sử dụng (Tech Stack)
+## 🛠️ Công nghệ sử dụng
 
 ### Backend (Server - Máy bị điều khiển)
 * **Ngôn ngữ:** C++ 17 (Visual Studio).
@@ -56,7 +56,6 @@ Hệ thống cung cấp bộ công cụ toàn diện để quản trị hệ th�
 ### Bước 2: Cấu hình FFmpeg
 1.  Tải `ffmpeg.exe` (bản static build).
 2.  Copy file `ffmpeg.exe` vào cùng thư mục với `RemoteServer.exe` (hoặc thư mục `Tools/` tùy theo code quy định).
-    * *Lưu ý: Nếu không có FFmpeg, tính năng Webcam sẽ không hoạt động.*
 
 ### Bước 3: Chạy Server
 1.  Click chuột phải vào `RemoteServer.exe` -> Chọn **Run as Administrator**.
@@ -78,26 +77,6 @@ Hệ thống cung cấp bộ công cụ toàn diện để quản trị hệ th�
 * **Tường lửa (Firewall):** Nếu kết nối từ máy khác trong mạng LAN, hãy đảm bảo Windows Firewall đã **cho phép Port 8080** (Inbound Rule) hoặc tắt tạm thời Firewall.
 * **Antivirus:** Một số phần mềm diệt virus có thể nhận diện `RemoteServer.exe` là mã độc do hành vi Hook bàn phím (Keylogger). Hãy thêm vào danh sách loại trừ (Exclusion) khi chạy thử nghiệm.
 * **Lag/Delay:** Khi truyền tải file lớn hoặc xem Webcam, độ trễ phụ thuộc vào tốc độ mạng LAN của bạn.
-
-## 📂 Cấu trúc dự án (Project Structure)
-Remote-Control-Project/
-├── Client/ 
-│ ├── index.html 
-├── Server/ 
-│ ├── Core/ 
-│ │ ├── ServerNetwork.cpp
-│ │ ├── CommandHandler.cpp  
-│ ├── Features/ 
-│ │ ├── AppManager.cpp 
-│ │ ├── ScreenCap.cpp
-│ │ ├── Keylogger.cpp
-│ │ ├── Webcam.cpp 
-│ │ ├── FileMgr.h 
-│ │ └── Power.cpp 
-│ ├── Utils/ 
-│ └── main.cpp 
-└── Tools/ 
-│ └── ffmpeg.exe
 
 ## 👥 Tác giả (Authors)
 **Nhóm 15 - Lớp 24TNT1 - HCMUS**
