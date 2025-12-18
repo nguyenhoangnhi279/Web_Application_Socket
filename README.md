@@ -24,7 +24,7 @@ Hệ thống cung cấp bộ công cụ toàn diện để quản trị hệ th�
 | **File Transfer** | Duyệt file (Remote Explorer), Upload và Download file tốc độ cao. |
 | **Net Monitor** | Giám sát các kết nối mạng TCP/IP đang mở trên máy. |
 
-## 🛠️ Công nghệ sử dụng
+## Công nghệ sử dụng
 
 ### Backend (Server - Máy bị điều khiển)
 * **Ngôn ngữ:** C++ 17 (Visual Studio).
@@ -38,7 +38,7 @@ Hệ thống cung cấp bộ công cụ toàn diện để quản trị hệ th�
 * **Logic:** JavaScript (Native WebSocket API).
 * **Hiệu ứng:** Particles.js.
 
-## ⚙️ Yêu cầu cài đặt (Prerequisites)
+## Yêu cầu cài đặt
 
 1.  **Hệ điều hành:** Windows 10/11 (Server).
 2.  **Môi trường Build:** Visual Studio 2019/2022 (C++ Desktop Development).
@@ -72,13 +72,13 @@ Hệ thống cung cấp bộ công cụ toàn diện để quản trị hệ th�
     * *Nếu chạy cùng máy thì nhập `localhost:8080`.*
 3.  Nhấn nút **Connect**.
 
-## ⚠️ Lưu ý quan trọng (Troubleshooting)
+## ⚠️ Lưu ý quan trọng
 
 * **Tường lửa (Firewall):** Nếu kết nối từ máy khác trong mạng LAN, hãy đảm bảo Windows Firewall đã **cho phép Port 8080** (Inbound Rule) hoặc tắt tạm thời Firewall.
 * **Antivirus:** Một số phần mềm diệt virus có thể nhận diện `RemoteServer.exe` là mã độc do hành vi Hook bàn phím (Keylogger). Hãy thêm vào danh sách loại trừ (Exclusion) khi chạy thử nghiệm.
 * **Lag/Delay:** Khi truyền tải file lớn hoặc xem Webcam, độ trễ phụ thuộc vào tốc độ mạng LAN của bạn.
 
-## 👥 Tác giả (Authors)
+## Tác giả
 **Nhóm 15 - Lớp 24TNT1 - HCMUS**
 * Nguyễn Hoàng Ý Nhi
 * Đỗ Lê Phong Phú
