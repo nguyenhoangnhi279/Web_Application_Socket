@@ -32,7 +32,7 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 1,
+          "SelectedChildIndex": 2,
           "Children": [
             {
               "$type": "Document",
@@ -49,6 +49,10 @@
               "EditorCaption": ""
             },
             {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{cce594b6-0c39-4442-ba28-10c64ac7e89f}"
+            },
+            {
               "$type": "Document",
               "DocumentIndex": 0,
               "Title": "ServerNetwork.cpp",
@@ -56,7 +60,7 @@
               "RelativeDocumentMoniker": "Network\\ServerNetwork.cpp",
               "ToolTip": "C:\\Users\\Technical Support\\Desktop\\\u0110\u1ED3 \u00E1n\\server\\Network\\ServerNetwork.cpp",
               "RelativeToolTip": "Network\\ServerNetwork.cpp",
-              "ViewState": "AgIAAEoAAAAAAAAAAAAowFMAAAA5AAAAAAAAAA==",
+              "ViewState": "AgIAAJYAAAAAAAAAAAAAAJ4AAAAaAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
               "WhenOpened": "2025-12-13T08:22:35.27Z",
               "EditorCaption": ""

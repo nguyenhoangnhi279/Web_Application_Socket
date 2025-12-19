@@ -86,30 +86,87 @@ bool ServerNetwork::WebSocketHandshake(SOCKET client) {
     delete[] buffer;
     return true;
 }
-
 string ServerNetwork::ReceiveMessage() {
-    const int MAX_BUFFER_SIZE = 10485760;
-    char* buffer = new char[MAX_BUFFER_SIZE];
-    int received = recv(ClientSocket, (char*)buffer, MAX_BUFFER_SIZE, 0);
-    if (received <= 0) return ""; 
+    string fullMessage = "";
+    bool isFinalFragment = false;
 
-    if ((buffer[0] & 0x0F) == 0x08) return "DISCONNECT";
+    while (!isFinalFragment) {
+        const int MAX_BUFFER_SIZE = 10485760;
+        vector<char> buffer(MAX_BUFFER_SIZE);
 
-    unsigned long long payloadLen = buffer[1] & 127;
-    int maskOffset = 2;
-    
-    if (payloadLen == 126) maskOffset = 4;
-    else if (payloadLen == 127) maskOffset = 10;
+        int totalReceived = 0;
+        
+        int bytesRead = recv(ClientSocket, buffer.data(), 2, 0);
+        if (bytesRead <= 0) return ""; 
+        totalReceived += bytesRead;
 
-    unsigned char mask[4];
-    for (int i = 0; i < 4; i++) mask[i] = buffer[maskOffset + i];
+        unsigned char byte0 = (unsigned char)buffer[0];
+        unsigned char byte1 = (unsigned char)buffer[1];
 
-    string output = "";
-    for (int i = maskOffset + 4; i < received; i++) {
-        output += (char)(buffer[i] ^ mask[(i - (maskOffset + 4)) % 4]);
+        isFinalFragment = (byte0 & 0x80) != 0;
+        
+        int opcode = byte0 & 0x0F;
+        if (opcode == 0x08) return "DISCONNECT";
+
+        unsigned long long payloadLen = byte1 & 127;
+        int headerSize = 2; 
+
+        if (payloadLen == 126) {
+            while (totalReceived < 4) {
+                bytesRead = recv(ClientSocket, buffer.data() + totalReceived, 4 - totalReceived, 0);
+                if (bytesRead <= 0) return "";
+                totalReceived += bytesRead;
+            }
+            payloadLen = ((unsigned char)buffer[2] << 8) | (unsigned char)buffer[3];
+            headerSize = 4;
+        } else if (payloadLen == 127) {
+            while (totalReceived < 10) {
+                bytesRead = recv(ClientSocket, buffer.data() + totalReceived, 10 - totalReceived, 0);
+                if (bytesRead <= 0) return "";
+                totalReceived += bytesRead;
+            }
+            payloadLen = 0;
+            for (int i = 0; i < 8; i++) {
+                payloadLen = (payloadLen << 8) | (unsigned char)buffer[2 + i];
+            }
+            headerSize = 10;
+        }
+
+        headerSize += 4; 
+        while (totalReceived < headerSize) {
+            bytesRead = recv(ClientSocket, buffer.data() + totalReceived, headerSize - totalReceived, 0);
+            if (bytesRead <= 0) return "";
+            totalReceived += bytesRead;
+        }
+
+        if (payloadLen > MAX_BUFFER_SIZE - headerSize) {
+            cout << ">> [LOI] Frame qua lon so voi buffer, resize..." << endl;
+            buffer.resize(headerSize + payloadLen);
+        }
+
+        unsigned long long totalFrameSize = headerSize + payloadLen;
+
+        while (totalReceived < totalFrameSize) {
+            bytesRead = recv(ClientSocket, buffer.data() + totalReceived, totalFrameSize - totalReceived, 0);
+            if (bytesRead <= 0) return ""; 
+            totalReceived += bytesRead;
+        }
+
+        int maskOffset = headerSize - 4;
+        unsigned char mask[4];
+        for (int i = 0; i < 4; i++) mask[i] = buffer[maskOffset + i];
+
+        string chunk = "";
+        chunk.resize(payloadLen);
+        
+        for (unsigned long long i = 0; i < payloadLen; i++) {
+            chunk[i] = (buffer[headerSize + i] ^ mask[i % 4]);
+        }
+
+        fullMessage += chunk;
     }
-    delete[] buffer;
-    return output;
+
+    return fullMessage;
 }
 
 void ServerNetwork::SendFrame(string msg) {
@@ -125,7 +182,6 @@ void ServerNetwork::SendFrame(string msg) {
         frame.push_back((len >> 8) & 0xFF);
         frame.push_back(len & 0xFF);
     } else {
-        // Hỗ trợ gói tin cực lớn (64-bit length)
         frame.push_back(127);
         for (int i = 7; i >= 0; i--) {
             frame.push_back((len >> (8 * i)) & 0xFF);
