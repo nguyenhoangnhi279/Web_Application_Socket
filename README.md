@@ -67,7 +67,7 @@ Hệ thống cung cấp bộ công cụ toàn diện để quản trị hệ th�
     ```
 
 ### Bước 4: Kết nối từ Client
-1.  Truy cập đường link: https://remotewebapp.netlify.app/ (cần Allow Insecure content (nội dung không an toàn) ở Site settings).
+1.  Truy cập đường link: https://remotewebapp.netlify.app/ (cần Allow Insecure content (nội dung không an toàn) ở Site settings) hoặc mở file `index.html` bằng browser.
 2.  Nhập địa chỉ IP của máy Server (ví dụ: `192.168.1.10:8080`).
     * *Nếu chạy cùng máy thì nhập `localhost:8080`.*
 3.  Nhấn nút **Connect**.
