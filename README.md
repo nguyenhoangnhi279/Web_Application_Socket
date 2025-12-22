@@ -67,7 +67,7 @@ Hệ thống cung cấp bộ công cụ toàn diện để quản trị hệ th�
     ```
 
 ### Bước 4: Kết nối từ Client
-1.  Mở file `index.html` bằng trình duyệt (Chrome/Edge).
+1.  Truy cập đường link `https://remotewebapp.netlify.app/`.
 2.  Nhập địa chỉ IP của máy Server (ví dụ: `192.168.1.10:8080`).
     * *Nếu chạy cùng máy thì nhập `localhost:8080`.*
 3.  Nhấn nút **Connect**.
